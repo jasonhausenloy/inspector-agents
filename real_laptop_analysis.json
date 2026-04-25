@@ -1,0 +1,114 @@
+{
+  "records": 9178,
+  "wall_minutes_simulated": 7.6,
+  "loss_curve": {
+    "first_10_mean": 3.908,
+    "mid_window_mean": 1.4127,
+    "last_50_mean": 1.2146,
+    "min_loss": 1.1543,
+    "reduction_factor": 3.76
+  },
+  "loss_stats": {
+    "name": "loss",
+    "n": 9178,
+    "min": 1.1543,
+    "max": 4.4112,
+    "mean": 1.5711,
+    "median": 1.4151,
+    "stdev": 0.3846
+  },
+  "step_time_seconds": {
+    "name": "step_time_s",
+    "n": 9178,
+    "min": 0.0385,
+    "max": 4.3519,
+    "mean": 0.0523,
+    "median": 0.0519,
+    "stdev": 0.0463
+  },
+  "forward_ms": {
+    "name": "forward_ms",
+    "n": 8003,
+    "min": 12.35,
+    "max": 182.26,
+    "mean": 13.057,
+    "median": 12.87,
+    "stdev": 2.475
+  },
+  "backward_ms": {
+    "name": "backward_ms",
+    "n": 8003,
+    "min": 23.67,
+    "max": 82.02,
+    "mean": 25.0234,
+    "median": 24.81,
+    "stdev": 1.5363
+  },
+  "optimizer_ms": {
+    "name": "optimizer_ms",
+    "n": 8003,
+    "min": 12.4,
+    "max": 260.19,
+    "mean": 14.826,
+    "median": 13.72,
+    "stdev": 8.5248
+  },
+  "tokens_per_second": {
+    "name": "tps",
+    "n": 8003,
+    "min": 11967.0,
+    "max": 82720.8,
+    "mean": 77518.3642,
+    "median": 78630.4,
+    "stdev": 5863.0066
+  },
+  "process_rss_mb": {
+    "name": "rss_mb",
+    "n": 8003,
+    "min": 289.8,
+    "max": 487.6,
+    "mean": 367.5817,
+    "median": 333.1,
+    "stdev": 64.0897
+  },
+  "mps_allocated_mb": {
+    "name": "mps_mb",
+    "n": 8003,
+    "min": 50.8,
+    "max": 51.9,
+    "mean": 51.5498,
+    "median": 51.2,
+    "stdev": 0.3502
+  },
+  "grad_norm_head": {
+    "name": "grad_head",
+    "n": 8003,
+    "min": 0.1672,
+    "max": 0.8873,
+    "mean": 0.2528,
+    "median": 0.2449,
+    "stdev": 0.0477
+  },
+  "grad_norm_blocks": {
+    "name": "grad_blocks",
+    "n": 8003,
+    "min": 0.0132,
+    "max": 0.0936,
+    "mean": 0.0585,
+    "median": 0.0598,
+    "stdev": 0.0086
+  },
+  "grad_norm_embed": {
+    "name": "grad_embed",
+    "n": 8003,
+    "min": 0.0061,
+    "max": 0.0392,
+    "mean": 0.0215,
+    "median": 0.0217,
+    "stdev": 0.0032
+  },
+  "model_hash_changes": 183,
+  "total_flops": 724443466825728.0,
+  "total_tokens": 37593088,
+  "flops_per_token_actual": 19270656.0
+}

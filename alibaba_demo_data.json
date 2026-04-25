@@ -1,0 +1,83 @@
+{
+  "raw_pod_csv_row": {
+    "name": "openb-pod-4333",
+    "cpu_milli": "4000",
+    "memory_mib": "24576",
+    "num_gpu": "1",
+    "gpu_milli": "1000",
+    "gpu_spec": "",
+    "qos": "LS",
+    "pod_phase": "Succeeded",
+    "creation_time": "11640415",
+    "deletion_time": "11641504",
+    "scheduled_time": "11640415"
+  },
+  "sample_converted_record": {
+    "record_id": "rec_000000",
+    "prev_record_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+    "chip_id": "alibaba-openb-node-0358-gpu0",
+    "job_id": "openb-pod-4333",
+    "operator": "alibaba-ls",
+    "cluster_region": "alibaba-cn",
+    "window_start": "2023-10-13T17:26:55Z",
+    "window_end": "2023-10-13T17:27:55Z",
+    "op_type": "inference",
+    "flops": 7500000000000000.0,
+    "tokens_processed": 375000,
+    "batch_size": 1,
+    "sequence_length": 4096,
+    "model_hash_prefix": "sha256:b31e0504c1e296e9",
+    "dataset_fingerprint": "sha256:a75cea3c4036fbdd",
+    "upstream_refs": [],
+    "data_source_tags": [
+      "alibaba:qos=LS",
+      "alibaba:phase=Succeeded"
+    ],
+    "code_commit": "git:alibaba/ls@98a825b",
+    "config_hash": "sha256:63df6f7631c003e4",
+    "_alibaba": {
+      "real": [
+        "chip_id",
+        "job_id",
+        "op_type",
+        "operator",
+        "window_start",
+        "window_end",
+        "data_source_tags"
+      ],
+      "synthesized": [
+        "flops",
+        "tokens_processed",
+        "batch_size",
+        "sequence_length",
+        "model_hash_prefix",
+        "dataset_fingerprint",
+        "config_hash",
+        "code_commit"
+      ],
+      "source_pod_qos": "LS",
+      "source_node_model": "G2",
+      "source_gpu_spec": "",
+      "source_gpu_milli": 1000
+    }
+  },
+  "verdict": {
+    "commitment_id": "no-frontier-training",
+    "verdict": 1,
+    "confidence": 0.95,
+    "triggered_rule_id": "none",
+    "flagged_record_ids": [],
+    "rationale": "All four jobs are pure inference operations with distinct model_hash_prefix and code_commit signatures, ruling out run-splitting. FLOP-per-token ratios average ~2e10, consistent with genuine inference (not training mislabeled). Dataset fingerprints are stable within each job, and batch-size integrity checks pass. No evidence of evasion patterns: operations respect computational boundaries per job, with total inference FLOP well below the 1e18 cap for each, and no forbidden data sources detected.",
+    "trigger": "semantic",
+    "llm_cost_usd": 0.10221449999999999
+  },
+  "scenario_summary": {
+    "records": 60,
+    "jobs": 4,
+    "chips": 4,
+    "total_flops": 3.085475541176748e+17,
+    "op_distribution": {
+      "inference": 60
+    }
+  }
+}

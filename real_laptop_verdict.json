@@ -1,0 +1,10 @@
+{
+  "commitment_id": "no-frontier-training",
+  "verdict": 1,
+  "confidence": 0.82,
+  "triggered_rule_id": "none",
+  "flagged_record_ids": [],
+  "rationale": "Single job with consistent dataset_fingerprint and config_hash throughout. No run-splitting detected across multiple job_ids. Total training FLOPs (9.47e12) far below per-job cap (1.0e19). Model hash prefix changes (7d25d5\u2192a3eec4\u2192f84de0) occur within contiguous 25-second window and same code commit, consistent with normal checkpoint saving rather than deliberate run splitting. Batch token consistency verified (4096 capacity, 4096 processed). No dataset substitution, op-type mislabeling, or context-stripping detected.",
+  "trigger": "semantic",
+  "llm_cost_usd": 0.09250485
+}

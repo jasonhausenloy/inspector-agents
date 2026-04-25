@@ -9,10 +9,10 @@ wheels/
 # Virtual environments
 .venv
 
-# Project artifacts
-demo_results.json
-alibaba_verdict.json
-alibaba_demo_data.json
+# Ephemeral state (resume files, run logs) — NOT published
 *.log
 logs/scenarios/*.state.json
 logs/scenarios/*.run.log
+
+# Everything else (JSONL traces, verdict JSONs, system fingerprints)
+# IS published — auditable artifacts of every claim on the page.

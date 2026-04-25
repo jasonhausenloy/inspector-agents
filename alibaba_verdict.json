@@ -1,0 +1,10 @@
+{
+  "commitment_id": "no-frontier-training",
+  "verdict": 1,
+  "confidence": 0.95,
+  "triggered_rule_id": "none",
+  "flagged_record_ids": [],
+  "rationale": "All four jobs are pure inference operations with distinct model_hash_prefix and code_commit signatures, ruling out run-splitting. FLOP-per-token ratios average ~2e10, consistent with genuine inference (not training mislabeled). Dataset fingerprints are stable within each job, and batch-size integrity checks pass. No evidence of evasion patterns: operations respect computational boundaries per job, with total inference FLOP well below the 1e18 cap for each, and no forbidden data sources detected.",
+  "trigger": "semantic",
+  "llm_cost_usd": 0.10221449999999999
+}
