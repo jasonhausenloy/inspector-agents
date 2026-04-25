@@ -64,7 +64,7 @@ Frontier training logs (GPT-4-scale) **do not exist publicly**. The closest is B
 
 The verification gap for international AI treaties — written about for years, never implemented. The hard part wasn't ever the technology; it was nobody building it. This is the working prototype.
 
-Built in a day from the [Inspector Agents](https://example.invalid/inspector-agents-paper) and [Auto-Adjudication](https://example.invalid/auto-adjudication-paper) drafts.
+Built in a day from the *Inspector Agents* and *Auto-Adjudication* drafts (internal). Companion whitepaper: [jason.ml/inspector/paper](https://jason.ml/inspector/paper). Live demo: [jason.ml/inspector](https://jason.ml/inspector). Live adversarial loop: [jason.ml/inspector/redteam](https://jason.ml/inspector/redteam).
 
 ## License
 
