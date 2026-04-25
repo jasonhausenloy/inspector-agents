@@ -262,15 +262,30 @@ DETERMINISTIC_DISPATCH = {
 
 
 def run_deterministic(commitment: dict, records: list[dict]) -> list[Violation]:
+    """Run every deterministic check. Each check is wrapped in a try/except so a
+    malformed record (e.g. invalid timestamp from a red-team mutation) becomes
+    a `record_malformed` violation rather than crashing the inspector.
+    """
     viols: list[Violation] = []
-    viols.extend(check_hash_chain(records))
-    viols.extend(check_timestamp_monotonic(records))
-    viols.extend(check_flop_physically_possible(records))
+
+    def _safe(fn, *args):
+        try:
+            return fn(*args)
+        except Exception as e:
+            return [Violation(
+                rule_id="record_malformed",
+                record_id=None,
+                message=f"{fn.__name__} raised {type(e).__name__}: {str(e)[:200]}",
+            )]
+
+    viols.extend(_safe(check_hash_chain, records))
+    viols.extend(_safe(check_timestamp_monotonic, records))
+    viols.extend(_safe(check_flop_physically_possible, records))
     for rule in commitment.get("deterministic_rules", []):
         fn = DETERMINISTIC_DISPATCH.get(rule["kind"])
         if fn is None:
             continue
-        viols.extend(fn(records, rule))
+        viols.extend(_safe(fn, records, rule))
     return viols
 
 
