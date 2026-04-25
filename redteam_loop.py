@@ -94,7 +94,7 @@ def safe_exec(code: str, records: list[dict]) -> list[dict]:
 # -------- LLM tier (Claude Code CLI) --------
 
 def claude_p(system_prompt: str, user_msg: str, model: str = "haiku",
-             max_seconds: int = 120) -> tuple[str, float]:
+             max_seconds: int = 300) -> tuple[str, float]:
     """Call `claude -p` with system + user, return (text, cost_usd)."""
     if not shutil.which("claude"):
         raise RuntimeError("claude CLI missing")
