@@ -222,6 +222,19 @@ def append_round(round_data: dict) -> None:
     TRACE_PATH.parent.mkdir(parents=True, exist_ok=True)
     with TRACE_PATH.open("a") as f:
         f.write(json.dumps(round_data) + "\n")
+    # Auto-commit + push so the live /inspector/redteam page picks it up via GitHub raw.
+    # Best-effort, silent on failure.
+    try:
+        subprocess.run(["git", "add", str(TRACE_PATH.relative_to(ROOT))],
+                       cwd=ROOT, check=True, capture_output=True, timeout=15)
+        subprocess.run(["git", "commit", "-q", "-m",
+                        f"redteam round {round_data.get('round', '?')}: {round_data.get('evasion_name', '(error)')}",
+                        "--no-verify"],
+                       cwd=ROOT, check=True, capture_output=True, timeout=15)
+        subprocess.run(["git", "push", "-q", "origin", "main"],
+                       cwd=ROOT, check=False, capture_output=True, timeout=30)
+    except Exception:
+        pass  # non-fatal
 
 
 def _log(msg: str) -> None:

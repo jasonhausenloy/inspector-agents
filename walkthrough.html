@@ -213,11 +213,51 @@
 <div class="eyebrow">Inspector Agents · Live demo</div>
 <h1>How to catch a lab cheating on an AI treaty.</h1>
 <p class="lede">An AI inspector reads the lab's diary. <em>One light comes out: green or red.</em></p>
-<p class="lede muted">A working prototype of the missing enforcement layer for international AI agreements. Tested on synthetic data we designed, real Alibaba production traces, and a real model we trained ourselves overnight on a laptop. Source: <a href="https://github.com/jasonhausenloy/inspector-agents" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);">github.com/jasonhausenloy/inspector-agents</a></p>
+<p class="lede muted">A working prototype of the missing enforcement layer for international AI agreements. Source: <a href="https://github.com/jasonhausenloy/inspector-agents" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);">github.com/jasonhausenloy/inspector-agents</a></p>
+
+<div class="setup" style="margin-top:32px">
+  <div class="item">
+    <div class="label">Synthetic adversarial</div>
+    <div class="value">6 / 6<small>cases caught, $0.29</small></div>
+  </div>
+  <div class="item">
+    <div class="label">Real laptop training</div>
+    <div class="value">5 / 6<small>cases caught, $0.39</small></div>
+  </div>
+  <div class="item">
+    <div class="label">Real Alibaba + BLOOM data</div>
+    <div class="value">No false positives<small>real production traces</small></div>
+  </div>
+</div>
+
+<details style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:4px;margin:24px 0;" open>
+  <summary style="padding:14px 18px;cursor:pointer;font-weight:600;font-size:14px;list-style:none;">
+    <span style="color:var(--ink-soft);font-family:var(--mono);font-size:11px;letter-spacing:0.16em;">CONTENTS</span>
+  </summary>
+  <div style="padding:0 18px 14px;">
+    <ol style="font-size:14.5px;line-height:1.65;margin:0;padding-left:20px;color:var(--ink-soft);">
+      <li><a href="#why-build" style="color:var(--ink);">Why we're building this</a> — the third way</li>
+      <li><a href="#hard" style="color:var(--ink);">Why this is hard</a> — the verification dilemma</li>
+      <li><a href="#trick" style="color:var(--ink);">The trick</a> — what an AI inspector unlocks</li>
+      <li><a href="#raw" style="color:var(--ink);">What the inspector sees</a> — raw logs + treaty</li>
+      <li><a href="#alibaba" style="color:var(--ink);">Tested on real Alibaba production data</a></li>
+      <li><a href="#own-training" style="color:var(--ink);">We trained our own model and captured the trace</a></li>
+      <li><a href="#other-traces" style="color:var(--ink);">Other real traces surveyed</a> — Acme, Philly, BLOOM, OLMo, Pythia</li>
+      <li><a href="#synthetic" style="color:var(--ink);">The synthetic dataset we designed</a></li>
+      <li><a href="#audit" style="color:var(--ink);"><strong>The interactive six-case audit</strong></a></li>
+      <li><a href="/inspector/redteam" style="color:var(--ink);">Live: Claude-vs-Claude adversarial loop</a> →</li>
+      <li><a href="#appendix" style="color:var(--ink);">Appendix · Structural observations from the real run</a></li>
+      <li><a href="#limits" style="color:var(--ink);">Honest limits</a> — what we don't claim</li>
+      <li><a href="#missing" style="color:var(--ink);">What's still missing</a> — the three obstacles + grant ask</li>
+      <li><a href="#scale" style="color:var(--ink);">What this becomes at scale</a></li>
+      <li><a href="#closing" style="color:var(--ink);">Closing</a> — the third way</li>
+    </ol>
+  </div>
+</details>
 
 <hr class="rule">
 
-<h2>Why we're building this</h2>
+<h2 id="why-build">Why we're building this</h2>
 <div class="sec-tag">The third way</div>
 <div class="manifesto">
   <p>
@@ -256,7 +296,7 @@
 
 <hr class="rule">
 
-<h2>Why this is hard</h2>
+<h2 id="hard">Why this is hard</h2>
 <div class="sec-tag">The dilemma</div>
 <p>
   Imagine the US and China sign an AI treaty: <em>"No-one trains AI bigger than 10²⁵ floating-point operations without 60 days notice."</em> Both sides want this. Both sides also want to know the other side is honoring it.
@@ -287,7 +327,7 @@
 
 <hr class="rule">
 
-<h2>The trick</h2>
+<h2 id="trick">The trick</h2>
 <div class="sec-tag">What an AI inspector unlocks</div>
 <p>An AI can do something a human can't: <strong>read everything, then forget.</strong></p>
 <p>We put a small AI agent inside a sealed box at the lab. The box has very specific properties:</p>
@@ -327,7 +367,7 @@
 
 <hr class="rule">
 
-<h2>What the inspector actually sees</h2>
+<h2 id="raw">What the inspector actually sees</h2>
 <div class="sec-tag">Two inputs, raw</div>
 
 <p>
@@ -447,7 +487,7 @@
 
 <hr class="rule">
 
-<h2>Tested on real Alibaba production data</h2>
+<h2 id="alibaba">Tested on real Alibaba production data</h2>
 <div class="sec-tag">Not just synthetic. The pipeline runs on actual cluster traces.</div>
 
 <p>
@@ -531,7 +571,7 @@
 
 <hr class="rule">
 
-<h2>So we trained our own model and captured the real thing</h2>
+<h2 id="own-training">So we trained our own model and captured the real thing</h2>
 <div class="sec-tag">A real GPT, real chip, real gradients, real every-step log</div>
 
 <p>
@@ -627,7 +667,7 @@
 
 <hr class="rule">
 
-<h2>Other real traces we surveyed</h2>
+<h2 id="other-traces">Other real traces we surveyed</h2>
 <div class="sec-tag">What else is publicly available</div>
 
 <p>
@@ -678,7 +718,7 @@
 
 <hr class="rule">
 
-<h2>And the synthetic dataset we designed</h2>
+<h2 id="synthetic">And the synthetic dataset we designed</h2>
 <div class="sec-tag">Why it's a feature, not a hack</div>
 
 <p>
@@ -704,7 +744,7 @@
 
 <hr class="rule">
 
-<h2>Now let's audit.</h2>
+<h2 id="audit">Now let's audit.</h2>
 <div class="sec-tag">Six cases. We start simple, end adversarial.</div>
 
 <p>
@@ -753,7 +793,7 @@
 
 <hr class="rule">
 
-<h2>What's still missing</h2>
+<h2 id="missing">What's still missing</h2>
 <div class="sec-tag">The two real obstacles, and what this grant would fund</div>
 <p>
   We can read the logs. We can classify compliance. The pipeline above is real and runs against real Claude. So why isn't this deployed? Two specific obstacles — both addressable, neither yet solved.
@@ -822,7 +862,7 @@
   <li><strong>FlexHEGs / hardware attestation.</strong> Useful complement — proves the chip is real and reporting honestly. But still needs something to read the resulting logs and decide if they violate the treaty. That's us.</li>
 </ul>
 
-<h2 style="margin-top:48px">What this becomes at scale</h2>
+<h2 id="scale" style="margin-top:48px">What this becomes at scale</h2>
 <div class="sec-tag">From demo to deployment</div>
 <ul>
   <li><strong>Real GPU traces.</strong> Plug a PyTorch profiler / NVIDIA DCGM stream in where the synthetic generator currently sits. Schema is the same.</li>
@@ -833,7 +873,7 @@
 
 <hr class="rule">
 
-<h2>Appendix · Structural observations from the real run</h2>
+<h2 id="appendix">Appendix · Structural observations from the real run</h2>
 <div class="sec-tag">Inferring workload type from log structure alone</div>
 
 <p>
@@ -875,7 +915,7 @@
 
 <hr class="rule">
 
-<h2>Honest limits · what we don't claim</h2>
+<h2 id="limits">Honest limits · what we don't claim</h2>
 <div class="sec-tag">Be the hostile reviewer first</div>
 
 <p>
@@ -921,7 +961,7 @@
 
 <hr class="rule">
 
-<h2>Closing</h2>
+<h2 id="closing">Closing</h2>
 <div class="sec-tag">The third way</div>
 <div class="manifesto">
   <p>
