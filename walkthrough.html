@@ -578,6 +578,37 @@
 </pre>
 </div>
 
+<h3 style="margin-top:32px">Adversarial test on real data</h3>
+<p>
+  The whole point of having a real-data trace is asking: <strong>do the same evasions catch on real artifacts as on synthetic ones?</strong> We took our 5 red-team mutations (the ones the inspector catches 6/6 on synthetic) and applied them to the 120-record real laptop training trace. Verdict matrix:
+</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px;margin:14px 0;">
+<thead><tr style="border-bottom:2px solid var(--rule);text-align:left;"><th style="padding:8px 12px;">Case</th><th>Expected</th><th>Got</th><th>Triggered rule</th><th style="text-align:right;">Cost</th></tr></thead>
+<tbody style="font-family:var(--mono);font-size:12.5px;">
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">CLEAN / real_laptop</td><td>COMPLIANT</td><td style="color:var(--good);font-weight:700;">✓ COMPLIANT</td><td>—</td><td style="text-align:right;">$0.09</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">EVASION / split_run</td><td>VIOLATION</td><td style="color:var(--good);font-weight:700;">✓ VIOLATION</td><td>no-splitting (semantic)</td><td style="text-align:right;">$0.14</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">EVASION / relabel_ops</td><td>VIOLATION</td><td style="color:var(--bad);font-weight:700;">✗ COMPLIANT</td><td>(missed)</td><td style="text-align:right;">$0.08</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">EVASION / swap_dataset_hash</td><td>VIOLATION</td><td style="color:var(--good);font-weight:700;">✓ VIOLATION</td><td>dataset-provenance (semantic)</td><td style="text-align:right;">$0.08</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">EVASION / pad_batches</td><td>VIOLATION</td><td style="color:var(--good);font-weight:700;">✓ VIOLATION</td><td>batch_token_consistency (deterministic)</td><td style="text-align:right;">$0.00</td></tr>
+<tr><td style="padding:8px 12px;">EVASION / drop_context</td><td>VIOLATION</td><td style="color:var(--good);font-weight:700;">✓ VIOLATION</td><td>require_upstream_refs (deterministic)</td><td style="text-align:right;">$0.00</td></tr>
+</tbody>
+</table>
+
+<p>
+  <strong>5/6 on real data — and the miss is interesting.</strong> The <code>relabel_ops</code> evasion (relabeling training as inference) was caught on synthetic data because the synthetic FLOP/token ratio sat at 6×10¹⁰ — squarely in the "training-shaped" regime. On the real laptop trace, FLOP/token is <strong>1.9×10⁷</strong> — three orders of magnitude lower, because the model is small. So when the inspector sees "claimed inference, FLOP/token = 1.9×10⁷", that ratio is consistent with inference, not suspicious.
+</p>
+
+<div class="stake">
+  <h4>What this teaches us about deploying inspectors at small scale</h4>
+  <p>
+    The op-type-honesty rule has an implicit assumption: training compute is per-token-expensive, inference is per-token-cheap, ratios differ by ~3×. <strong>That assumption breaks for sub-100M-parameter models.</strong> A small model's training FLOP/token ratio looks like a large model's inference ratio. The rule needs calibration against model size, not a fixed threshold.
+  </p>
+  <p>
+    This is exactly the kind of finding you only surface by running on real data. We surfaced it. Future versions of the commitment YAML would parameterize the threshold by claimed model size.
+  </p>
+</div>
+
 <div class="stake" style="margin-top:24px">
   <h4>How close is this to a frontier trace?</h4>
   <p>
@@ -610,8 +641,8 @@
   <dt>Microsoft Philly</dt>
   <dd><a href="https://github.com/msr-fiddle/philly-traces" target="_blank" rel="noopener" style="color:var(--ink)">github.com/msr-fiddle/philly-traces</a>. Per-minute per-GPU <code>nvidia-smi</code> utilization on 117k real DNN training jobs (2017). Older but the chip × time grid is exactly what verification wants.</dd>
 
-  <dt>BLOOM-176B logs</dt>
-  <dd><a href="https://huggingface.co/bigscience/tr11-176B-logs" target="_blank" rel="noopener" style="color:var(--ink)">huggingface.co/bigscience/tr11-176B-logs</a>. <strong>The only fully-public 100B+ training run.</strong> 115,311 iterations × per-iteration <code>consumed_tokens + TFLOPs + iteration_time + lm_loss + grad_norm</code>. Best narrative anchor for "what a frontier-class run looks like."</dd>
+  <dt>BLOOM-176B logs ✓ adapted</dt>
+  <dd><a href="https://huggingface.co/bigscience/tr11-176B-logs" target="_blank" rel="noopener" style="color:var(--ink)">huggingface.co/bigscience/tr11-176B-logs</a>. <strong>The only fully-public 100B+ training run.</strong> 115,311 iterations on 384 A100s. Adapter at <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/logs/bloom_adapter.py" target="_blank" rel="noopener" style="color:var(--ink)"><code>logs/bloom_adapter.py</code></a>. See structural-fingerprint analysis below.</dd>
 
   <dt>OLMo / Pythia W&B</dt>
   <dd>Allen AI's <a href="https://wandb.ai/ai2-llm/OLMo-2-1124-7B" target="_blank" rel="noopener" style="color:var(--ink)">OLMo-2 W&B</a> and EleutherAI's <a href="https://wandb.ai/eleutherai/pythia" target="_blank" rel="noopener" style="color:var(--ink)">Pythia W&B</a>. Public Weights & Biases projects with per-step training metrics. Run-level not chip-level — but real frontier-ish models, fully open weights + datasets.</dd>
@@ -620,8 +651,29 @@
   <dd><a href="https://github.com/S-Lab-System-Group/HeliosData" target="_blank" rel="noopener" style="color:var(--ink)">github.com/S-Lab-System-Group/HeliosData</a>. SenseTime cluster trace, 1.5M GPU jobs over 6 months. Job-level only.</dd>
 </dl>
 
+<h3 style="margin-top:32px">Structural fingerprints from BLOOM-176B</h3>
+<p>
+  We ran the adapter on the public BLOOM training chronicles. 13 sampled iterations, each one a real datapoint from the 115,311-step training run (iter 12,695 → 45,000). Numbers as the inspector would see them:
+</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px;margin:14px 0;">
+<thead><tr style="border-bottom:2px solid var(--rule);text-align:left;"><th style="padding:8px 12px;">Metric</th><th>Value</th><th style="color:var(--ink-soft);">Interpretation</th></tr></thead>
+<tbody style="font-family:var(--mono);font-size:12.5px;">
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">LM loss range</td><td>2.46 → 2.11</td><td style="color:var(--ink-soft);font-family:var(--sans);">Genuine training. Decreasing.</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">grad_norm range</td><td>0.14 → 960.35</td><td style="color:var(--ink-soft);font-family:var(--sans);">Spike (960!) indicates a real instability event. Auditors flag.</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">iter time</td><td>106.6s ± 1s</td><td style="color:var(--ink-soft);font-family:var(--sans);">Cluster stable, no thermal throttling.</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">TFLOPs/GPU</td><td>147 (47% of A100 peak)</td><td style="color:var(--ink-soft);font-family:var(--sans);">Standard Megatron utilization.</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:8px 12px;">Realized FLOP/token</td><td>1.44 × 10¹²</td><td style="color:var(--ink-soft);font-family:var(--sans);">Kaplan 6×N predicts 1.06 × 10¹². Within 36% — close fit, slightly higher due to attention.</td></tr>
+<tr><td style="padding:8px 12px;">Total logged FLOPs (in 13 sampled iters)</td><td>7.83 × 10¹⁹</td><td style="color:var(--ink-soft);font-family:var(--sans);">A frontier-scale slice that <em>would</em> trip a 10¹⁹ training cap. Over by 7.8×.</td></tr>
+</tbody>
+</table>
+
+<p>
+  This is what real frontier-class verification telemetry looks like. The grad_norm spike at 960 is a <strong>genuine instability event</strong> in BLOOM's actual training (the chronicles document several) — a frontier auditor would want to verify the prover skipped the affected step or rolled back. The <code>num_zeros</code>, <code>skipped_iterations</code>, and <code>nan_iterations</code> fields all let an inspector reason about whether the prover handled the spike honestly.
+</p>
+
 <p class="muted" style="margin-top:18px">
-  Acme is the next adapter to write. Philly is the second-best. BLOOM is the right exhibit for "this is what a single frontier run looks like end-to-end". The full ranked report is in the GitHub repo.
+  Acme and Philly are the next adapters to write. Plus we plan to scrape the Pythia and OLMo W&B projects for full step-level data via the public W&B API.
 </p>
 
 <hr class="rule">
@@ -721,6 +773,36 @@
   </p>
 </div>
 
+<div class="stake">
+  <h4>Live: Claude-vs-Claude adversarial loop running now</h4>
+  <p>
+    A second Claude (Sonnet) is generating new evasions overnight; the inspector (Haiku) is trying to catch them. <strong>The inspector hasn't seen these attacks before.</strong> This closes the "you wrote your own test" critique. Live results, including each attack's generated Python code, the inspector's verdict, and which rules caught it (or missed it):
+  </p>
+  <p style="margin-bottom:0">
+    <a href="/inspector/redteam" style="color:var(--ink);font-weight:600;">→ See the live red-team tournament</a>
+  </p>
+</div>
+
+<div class="stake">
+  <h4>Obstacle 3 · The inspector is currently Claude. It shouldn't stay Claude.</h4>
+  <p>
+    Today the inspector ships out to <code>claude -p</code>. That's a fine bootstrap — frontier models are the only ones smart enough to read these logs reliably right now — but it makes the trust story circular: if we're using Claude to verify whether labs (one of which is Anthropic) are honoring a treaty, who verifies Claude?
+  </p>
+  <p>
+    The right deployment is an <strong>open-source narrow inspector model that matches or beats Claude on this specific task</strong>, fine-tuned on millions of synthetic compliance traces and adversarial mutations like the ones our red-team loop generates. Smaller, cheaper, sovereign. Used by the US, China, and any third party who wants to run their own audits without trusting any closed-weights frontier lab.
+  </p>
+  <p>
+    Two technical requirements specifically:
+  </p>
+  <ul style="font-size:15px;line-height:1.55;margin:8px 0 4px 18px;">
+    <li><strong>Long context</strong> (≥1M tokens). A real audit window contains millions of records. Today's open models top out at 128k. We either need bigger context or innovations in <strong>streaming compression / hierarchical summarization of logs</strong> so a small-context inspector can still reason over a full audit window.</li>
+    <li><strong>Adversarially robust against the kind of evasions our redteam loop generates.</strong> Current open-source models fold easily under structured deception. Need fine-tuning specifically on adversarial-evasion traces.</li>
+  </ul>
+  <p style="margin-top:10px">
+    Building this open inspector model is itself a research program — the second deliverable of an OSV grant after the verification framework.
+  </p>
+</div>
+
 <div class="ask">
   <h3>What this grant would fund</h3>
   <p>
@@ -748,6 +830,94 @@
   <li><strong>Adjudication flow.</strong> When a violation is flagged, the next step is a debate: prover defends, verifier presses, an independent agent decides. The papers describe this in detail; we built the bit-emitter, not yet the courtroom.</li>
   <li><strong>Other domains.</strong> The same machinery — sealed AI auditor checking commitments against logs, emitting one bit — works for legal audits (privilege claims), financial audits (proof of solvency without disclosure), and supply-chain ethics (sourcing without exposing suppliers).</li>
 </ul>
+
+<hr class="rule">
+
+<h2>Appendix · Structural observations from the real run</h2>
+<div class="sec-tag">Inferring workload type from log structure alone</div>
+
+<p>
+  The inspector's job is to read the log and decide whether the lab is honest. To do that well, it needs to understand what <em>structure</em> a real workload has. Below are statistical fingerprints of our 9,178-step real training run that an inspector could use to discriminate workload classes (training vs inference vs eval vs research) without taking the lab's <code>op_type</code> label at face value.
+</p>
+
+<h3>Loss decreases monotonically — proves real learning</h3>
+<p>
+  First 10 steps: mean loss <strong>3.97</strong>. Mid run: <strong>1.51</strong>. Last 50 steps: <strong>1.27</strong>. Reduction factor 3.5×. An inspector that sees a "training" run with no loss decrease can flag fraudulent training claims. Inference runs have no loss to report at all — that asymmetry alone is a discriminator.
+</p>
+
+<h3>Forward / backward / optimizer time ratio fingerprints op_type</h3>
+<p>
+  On our real run: forward 13.06ms, backward 25.02ms, optimizer 14.83ms (all medians, n=8003). The ratio backward:forward ≈ 1.9 — what you'd expect from the chain rule, where backward computes gradients for ~2× as many tensors as forward. <strong>An inference-only workload would have backward ≈ 0 and optimizer ≈ 0.</strong> An eval workload would have backward ≈ 0 with no optimizer step.
+</p>
+<p>
+  This is the discriminator <code>relabel_ops</code> failed against on real data — but only because we pass the LLM <em>aggregated</em> stats, not the per-step time breakdown. A V2 commitment that mandates the breakdown closes the gap.
+</p>
+
+<h3>Throughput stability — proves no thermal throttling</h3>
+<p>
+  Tokens/second: median 78,630, stdev 5,863 (7.5% of mean). Tight distribution = the chip ran at consistent utilization throughout. Wide distribution would indicate throttling, contention, or a chip switching between workloads — all signals an inspector would care about.
+</p>
+
+<h3>Memory footprint — proves the claimed model size</h3>
+<p>
+  MPS allocated memory: stable at 51.5 MB ± 0.35. RSS: 290-490 MB (host). For a claimed 3.2M-parameter model, that's ~13 MB for parameters + ~38 MB for activations / optimizer state — consistent. <strong>If the prover claimed 7B parameters, MPS allocated should be ~14 GB</strong>, not 51 MB. Memory footprint is a hard physical constraint that inspectors can use as a sanity check on model-size claims.
+</p>
+
+<h3>Gradient norms by parameter group — fingerprints architecture</h3>
+<p>
+  Mean per-step gradient norm by group: head 0.25, blocks 0.06, embed 0.02. The head dominates because it's the loss-attached classifier; embeddings barely move because they have a small effective learning rate (every-token sparse update). <strong>This shape is distinctive of decoder-only transformers</strong>; encoder-decoder, MoE, or vision architectures would have characteristically different distributions.
+</p>
+
+<h3>Model fingerprint changes 183 times</h3>
+<p>
+  Over 9,178 steps we refresh the SHA-256 of model weights every 50 steps. 183 fingerprints captured ≈ one every 50.2 steps as expected. Prover can't claim "no model changes happened" while running training — the chain shows otherwise.
+</p>
+
+<hr class="rule">
+
+<h2>Honest limits · what we don't claim</h2>
+<div class="sec-tag">Be the hostile reviewer first</div>
+
+<p>
+  An OSV reviewer should expect us to know what's wrong with our own demo. The list:
+</p>
+
+<ul>
+  <li>
+    <strong>Three of five evasions are caught by hand-coded deterministic rules.</strong> If the threat model expanded beyond these five, the inspector wouldn't catch novel attacks deterministically. The two LLM-caught evasions (split_run, swap_dataset_hash) generalize better — but rule-based catches don't.
+  </li>
+  <li>
+    <strong>The 1-bit-out constraint is enforced by API contract, not cryptographically.</strong> A malicious inspector implementation could leak more. Real deployment needs zero-knowledge proofs or trusted execution environments — neither in this MVP.
+  </li>
+  <li>
+    <strong>FLOPs in the Alibaba adapter are synthesized.</strong> The trace doesn't carry FLOPs; we estimate from <code>gpu_milli × duration × peak FLOPs</code>. Each record marks which fields are real vs synthesized, but it's still synthesis.
+  </li>
+  <li>
+    <strong>Demo-scaled FLOP thresholds.</strong> 10¹⁹ training cap vs production 10²⁵. Same logic, just scaled to fit small synthetic traces. We make this explicit; doesn't make the absolute numbers real.
+  </li>
+  <li>
+    <strong>Single-chip only.</strong> 90% of the verification difficulty in frontier training is multi-host (gradient sync, fabric topology, stragglers, fault rates). Our laptop trace captures none of that. <code>rent-compute-plan.md</code> in the Obsidian vault costs out closing this gap.
+  </li>
+  <li>
+    <strong>Inspector is a Claude wrapper.</strong> A fine-tuned narrow inspector model would be cheaper, faster, and more adversarially robust. Today's bill at sovereign scale (~$770k/yr for 256 chips × 30 days × 1000 audit-windows) would force the swap. We haven't built the narrow model.
+  </li>
+  <li>
+    <strong>Sovereign trust is unaddressed.</strong> If China and the US agree to use the same inspector, who decides what the inspector says? The choice of inspector is itself a sovereign-trust problem we wave at but don't solve. Multi-party-built inspectors and adversarial verifier consortia are the V2 question.
+  </li>
+  <li>
+    <strong>One inspector, one decision per audit window.</strong> No statistical confidence intervals. With $0.10/audit, we could afford 10 inspectors voting and aggregate. Future work.
+  </li>
+  <li>
+    <strong>Hash chain is tamper-<em>evident</em>, not tamper-<em>proof</em>.</strong> A prover with full access to the original logs can recompute the chain after mutating records. Tamper-proof requires hardware attestation (FlexHEG-class) — we explicitly leave this for the hardware story.
+  </li>
+  <li>
+    <strong>Compound attacks not tested.</strong> A real attacker would mix evasions (split a run AND silently swap a dataset AND inflate batch counts in different windows). We tested each in isolation. Robustness against compound attacks is open.
+  </li>
+</ul>
+
+<p class="muted">
+  None of these are killer. Each is a known engineering or research path — none requires unobtainium. The point of the demo is to prove the architecture works; the V2 roadmap is what closes these gaps.
+</p>
 
 <hr class="rule">
 

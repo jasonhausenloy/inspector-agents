@@ -1,0 +1,36 @@
+{
+  "iterations_in_chronicles": 13,
+  "iteration_range": "12695\u201345000 of 115311",
+  "loss": {
+    "first": 2.463556,
+    "last": 2.113567,
+    "min": 2.113567,
+    "max": 5.098124
+  },
+  "grad_norm": {
+    "min": 0.139,
+    "max": 960.351,
+    "mean": 192.9613
+  },
+  "iteration_time_seconds": {
+    "min": 105.22,
+    "max": 111.0,
+    "mean": 106.64
+  },
+  "tflops_per_gpu": {
+    "min": 141.26,
+    "max": 149.02,
+    "mean": 147.06,
+    "as_pct_a100_peak": 47.1
+  },
+  "flops_per_token_realized": {
+    "mean": 1435550439218.37,
+    "kaplan_estimate_6N": 1056000000000
+  },
+  "compute_summary": {
+    "total_logged_flops": 7.82747543424e+19,
+    "total_logged_tokens": 54525952,
+    "gpus_used": 384,
+    "params_billion": 176.0
+  }
+}
