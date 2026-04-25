@@ -13,7 +13,7 @@ import hashlib
 import json
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from fnmatch import fnmatch
 from typing import Iterable
 
@@ -193,12 +193,71 @@ def _batch_token_consistency(records: list[dict], rule: dict) -> list[Violation]
     return viols
 
 
+def _window_completeness(records: list[dict], rule: dict) -> list[Violation]:
+    """Prover commits ahead of time to a (window_range × chip_inventory).
+    Submission must contain a record for every (chip, minute) slot in that
+    Cartesian product. Missing slots indicate truncation
+    (`chronological-tail-drop` evasion class) or chip-omission.
+
+    This is the completeness primitive the protocol needs to be sound.
+    """
+    expected_start = datetime.fromisoformat(
+        rule["expected_window_start"].replace("Z", "+00:00")
+    )
+    expected_end = datetime.fromisoformat(
+        rule["expected_window_end"].replace("Z", "+00:00")
+    )
+    window_seconds = int(rule.get("window_seconds", 60))
+    expected_chips = set(rule["expected_chips"])
+
+    if expected_end <= expected_start:
+        return [Violation(rule_id="window_completeness", record_id=None,
+                          message="expected_window_end <= expected_window_start in commitment")]
+
+    n_slots = int((expected_end - expected_start).total_seconds() // window_seconds)
+    expected_pairs: set[tuple[str, str]] = set()
+    for chip in expected_chips:
+        for m in range(n_slots):
+            slot_start = expected_start + timedelta(seconds=m * window_seconds)
+            expected_pairs.add((chip, slot_start.isoformat().replace("+00:00", "Z")))
+
+    actual_pairs: set[tuple[str, str]] = set()
+    for r in records:
+        actual_pairs.add((r["chip_id"], r["window_start"]))
+
+    missing = expected_pairs - actual_pairs
+    extra = actual_pairs - expected_pairs
+    viols: list[Violation] = []
+    if missing:
+        sample = sorted(missing)[:5]
+        viols.append(Violation(
+            rule_id="window_completeness",
+            record_id=None,
+            message=(
+                f"submission missing {len(missing)} of {len(expected_pairs)} expected "
+                f"(chip, minute) slots; first missing: {sample}"
+            ),
+        ))
+    if extra:
+        sample = sorted(extra)[:5]
+        viols.append(Violation(
+            rule_id="window_completeness",
+            record_id=None,
+            message=(
+                f"submission has {len(extra)} (chip, minute) slots outside the declared window; "
+                f"first unexpected: {sample}"
+            ),
+        ))
+    return viols
+
+
 DETERMINISTIC_DISPATCH = {
     "aggregate_flop_cap": _flop_cap,
     "forbidden_data_source_tags": _forbidden_tags,
     "forbidden_operators": _forbidden_operators,
     "require_upstream_refs": _require_upstream_refs,
     "batch_token_consistency": _batch_token_consistency,
+    "window_completeness": _window_completeness,
 }
 
 

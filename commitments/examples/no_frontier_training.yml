@@ -24,6 +24,20 @@ deterministic_rules:
   - kind: batch_token_consistency
     max_capacity_ratio: 5
 
+  # Completeness commitment — closes the chronological-tail-drop attack class
+  # discovered by the redteam loop on 2026-04-25. Prover commits ahead of time
+  # to the (window_range × chip_inventory) for this audit. Submission must
+  # contain a record for every (chip, minute) slot. Missing slots = truncation.
+  - kind: window_completeness
+    expected_window_start: "2026-04-24T09:00:00Z"
+    expected_window_end:   "2026-04-24T09:30:00Z"
+    expected_chips:
+      - gpu-us-west-2-0000
+      - gpu-us-west-2-0001
+      - gpu-us-west-2-0002
+      - gpu-us-west-2-0003
+    window_seconds: 60
+
 semantic_rules:
   - id: no-splitting
     description: >
