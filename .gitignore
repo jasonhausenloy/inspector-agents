@@ -1,0 +1,18 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Project artifacts
+demo_results.json
+alibaba_verdict.json
+alibaba_demo_data.json
+*.log
+logs/scenarios/*.state.json
+logs/scenarios/*.run.log

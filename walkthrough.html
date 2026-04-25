@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inspector Agents — A Demo You Can Click</title>
+<style>
+  :root {
+    --bg: #f7f4ec;
+    --bg-card: #ffffff;
+    --ink: #1c1a17;
+    --ink-soft: #5e574e;
+    --rule: #e6dfd1;
+    --good: #1f6b3a;
+    --good-bg: #e6f1ea;
+    --bad: #8a1d1d;
+    --bad-bg: #f4e3e3;
+    --warn: #92660b;
+    --warn-bg: #f6ecd6;
+    --neutral: #4a4744;
+    --shadow: 0 1px 0 rgba(20,18,15,.04), 0 8px 24px -12px rgba(20,18,15,.18);
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", system-ui, sans-serif;
+    --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+  main { max-width: 760px; margin: 0 auto; padding: 64px 28px 96px; }
+
+  .eyebrow { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 18px; }
+  h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 4.8vw, 54px); line-height: 1.05; letter-spacing: -0.01em; margin: 0 0 22px; }
+  .lede { font-size: 21px; line-height: 1.45; margin: 0 0 8px; }
+  .lede em { font-style: italic; color: var(--ink-soft); }
+
+  hr.rule { border: 0; height: 1px; background: var(--rule); margin: 56px 0; }
+
+  h2 { font-family: var(--serif); font-weight: 500; font-size: 30px; letter-spacing: -0.005em; margin: 0 0 8px; }
+  h2 + .sec-tag { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 28px; }
+  h3 { font-weight: 600; font-size: 18px; margin: 28px 0 8px; letter-spacing: -0.003em; }
+  p { margin: 0 0 16px; }
+  p.muted { color: var(--ink-soft); }
+  ul, ol { padding-left: 22px; margin: 12px 0 18px; }
+  li { margin: 6px 0; }
+  strong { color: var(--ink); }
+  code { font-family: var(--mono); font-size: 13px; background: var(--rule); padding: 1px 5px; border-radius: 4px; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 18px 0 24px; }
+  .compare .pane { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 12px; padding: 18px 20px; }
+  .compare .pane.bad-pane  { border-top: 3px solid var(--bad); }
+  .compare .pane.bad-pane h4 { color: var(--bad); }
+  .compare h4 { font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; margin: 0 0 10px; }
+  .compare p, .compare li { font-size: 15px; line-height: 1.5; margin: 0 0 10px; }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+
+  .diagram { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 14px; padding: 28px 24px; margin: 18px 0; }
+  .diagram svg { display: block; width: 100%; height: auto; }
+
+  /* Raw inputs viewer */
+  .raw {
+    background: #1c1a17;
+    color: #e6dfd1;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 16px 0;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.65;
+    overflow-x: auto;
+  }
+  .raw .key { color: #a8d3b8; }
+  .raw .str { color: #f6c98e; }
+  .raw .num { color: #e69aa6; }
+  .raw .com { color: #888178; font-style: italic; }
+  .raw .more { color: #a8a09a; font-style: italic; padding: 8px 0 0; }
+  .raw-head { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: #888178; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #3a352e; }
+
+  /* Annotated field list */
+  .field-key {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 12px 18px;
+    margin: 16px 0;
+    font-size: 14.5px;
+  }
+  .field-key dt { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  .field-key dd { margin: 0; color: var(--ink-soft); }
+  @media (max-width: 640px) {
+    .field-key { grid-template-columns: 1fr; gap: 4px 0; }
+    .field-key dd { margin-bottom: 10px; }
+  }
+
+  /* Setup boxes */
+  .setup { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 28px 0 8px; }
+  .setup .item { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 10px; padding: 18px; }
+  .setup .item .label { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  .setup .item .value { font-family: var(--serif); font-size: 18px; line-height: 1.3; }
+  .setup .item .value small { display: block; color: var(--ink-soft); font-size: 13px; font-family: var(--sans); margin-top: 4px; }
+  @media (max-width: 640px) { .setup { grid-template-columns: 1fr; } }
+
+  /* Level header */
+  .level {
+    margin: 56px 0 20px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--rule);
+    border-radius: 12px;
+  }
+  .level .lvl-num { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; color: var(--warn); text-transform: uppercase; margin-bottom: 6px; }
+  .level h3 { margin: 0 0 6px; font-family: var(--serif); font-weight: 500; font-size: 22px; letter-spacing: -0.005em; }
+  .level p { margin: 0; color: var(--ink-soft); font-size: 15px; line-height: 1.55; }
+  .level.lvl-2 .lvl-num { color: var(--bad); }
+
+  /* Cards */
+  .case { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); margin: 18px 0; overflow: hidden; transition: border-color .25s ease; }
+  .case[data-status="good"] { border-color: rgba(31,107,58,.4); }
+  .case[data-status="bad"]  { border-color: rgba(138,29,29,.4); }
+  .case-head { padding: 22px 24px 20px; display: grid; grid-template-columns: 1fr auto; gap: 18px; align-items: start; }
+  .case-title { font-family: var(--serif); font-size: 22px; margin: 0 0 6px; letter-spacing: -0.005em; }
+  .case-sub { color: var(--ink-soft); font-size: 15px; line-height: 1.5; margin: 0; }
+  .case-num { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink-soft); text-transform: uppercase; margin-bottom: 10px; }
+
+  button.audit { appearance: none; border: 1px solid var(--ink); background: var(--ink); color: var(--bg); font: 600 14px/1 var(--sans); padding: 12px 18px; border-radius: 999px; cursor: pointer; transition: transform .12s ease; white-space: nowrap; }
+  button.audit:hover { transform: translateY(-1px); }
+  button.audit[disabled] { background: var(--rule); color: var(--ink-soft); border-color: var(--rule); cursor: default; transform: none; }
+  button.audit .arrow { display: inline-block; margin-left: 6px; }
+
+  .case-body { display: none; border-top: 1px solid var(--rule); padding: 22px 24px 24px; background: linear-gradient(180deg, rgba(247,244,236,.5), transparent); }
+  .case[data-open="1"] .case-body { display: block; }
+
+  .why { background: var(--warn-bg); border-left: 3px solid var(--warn); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 12px 0 16px; font-size: 14.5px; }
+  .why b { color: var(--warn); }
+
+  .stage { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; padding: 8px 0; color: var(--ink-soft); font-size: 14px; }
+  .stage .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rule); margin-top: 8px; }
+  .stage[data-state="active"] .dot { background: var(--warn); animation: pulse 1s ease-in-out infinite; }
+  .stage[data-state="done"]   .dot { background: var(--good); }
+  .stage[data-state="hit"]    .dot { background: var(--bad); }
+  .stage[data-state="active"], .stage[data-state="done"], .stage[data-state="hit"] { color: var(--ink); }
+  @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.85); } }
+
+  .diary { background: #fbf8f0; border: 1px solid var(--rule); border-radius: 10px; padding: 14px 16px; margin: 12px 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--neutral); overflow-x: auto; }
+  .diary .row { display: block; white-space: nowrap; }
+  .diary .row.flag { background: var(--bad-bg); border-left: 3px solid var(--bad); padding-left: 8px; margin-left: -11px; color: var(--ink); }
+  .diary .key { color: var(--ink-soft); }
+
+  .verdict { display: none; margin-top: 18px; padding: 18px 20px; border-radius: 12px; background: var(--bg); }
+  .case[data-revealed="1"] .verdict { display: block; }
+  .verdict.good { background: var(--good-bg); }
+  .verdict.bad  { background: var(--bad-bg); }
+  .verdict-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; padding: 6px 10px; border-radius: 999px; }
+  .badge.good { background: var(--good); color: white; }
+  .badge.bad  { background: var(--bad);  color: white; }
+  .meta { font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; color: var(--ink-soft); }
+  .verdict-explain { font-size: 15px; line-height: 1.55; margin-top: 8px; }
+  .verdict-tech { font-size: 13px; color: var(--ink-soft); border-top: 1px dashed rgba(0,0,0,.12); margin-top: 14px; padding-top: 12px; }
+  .verdict-tech b { color: var(--ink); font-weight: 600; }
+
+  .scoreboard { background: var(--ink); color: var(--bg); border-radius: 14px; padding: 28px 26px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 24px; }
+  .scoreboard .stat .num { font-family: var(--serif); font-size: 36px; line-height: 1; margin-bottom: 6px; font-feature-settings: "tnum"; }
+  .scoreboard .stat .lbl { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; opacity: 0.7; }
+  @media (max-width: 640px) { .scoreboard { grid-template-columns: repeat(2, 1fr); } }
+
+  .controls { display: flex; gap: 12px; align-items: center; margin: 24px 0 8px; flex-wrap: wrap; }
+  button.run-all { appearance: none; border: 1px solid var(--ink); background: var(--bg); color: var(--ink); font: 600 14px/1 var(--sans); padding: 12px 18px; border-radius: 999px; cursor: pointer; }
+  button.reset { appearance: none; border: 1px solid var(--rule); background: transparent; color: var(--ink-soft); font: 500 13px/1 var(--sans); padding: 10px 14px; border-radius: 999px; cursor: pointer; }
+
+  .mode-banner { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 12px; border-radius: 999px; margin-left: 12px; }
+  .mode-banner.cached { background: var(--rule); color: var(--ink-soft); }
+  .mode-banner.live { background: var(--good-bg); color: var(--good); border: 1px solid var(--good); }
+  .mode-banner .led { width: 8px; height: 8px; border-radius: 50%; background: currentColor; animation: pulse 1.6s infinite; }
+
+  /* Toggle for raw logs */
+  .toggle-block { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 12px; padding: 4px; }
+  .toggle-block summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--ink); list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  .toggle-block summary::-webkit-details-marker { display: none; }
+  .toggle-block summary .arrow { font-family: var(--mono); color: var(--ink-soft); transition: transform .15s ease; }
+  .toggle-block[open] summary .arrow { transform: rotate(90deg); }
+  .toggle-block .body { padding: 4px 18px 18px; }
+
+  /* Manifesto prose */
+  .manifesto p { font-size: 17.5px; line-height: 1.7; color: var(--ink); margin: 0 0 18px; }
+  .manifesto p.signed { color: var(--ink-soft); font-size: 14px; font-style: italic; margin-top: 28px; }
+  .pullquote {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--ink);
+    border-left: 3px solid var(--accent, #1f3b2c);
+    padding: 6px 0 6px 22px;
+    margin: 28px 0 28px;
+    font-style: italic;
+  }
+  .stake { background: var(--bg-card); border: 1px solid var(--rule); border-radius: 12px; padding: 20px 24px; margin: 22px 0; }
+  .stake h4 { margin: 0 0 8px; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  .stake p { font-size: 16px; line-height: 1.6; margin: 0 0 10px; }
+  .stake p:last-child { margin-bottom: 0; }
+
+  .ask {
+    background: var(--ink); color: var(--bg);
+    border-radius: 14px; padding: 28px 28px;
+    margin: 28px 0;
+  }
+  .ask h3 { color: var(--bg); margin: 0 0 12px; font-family: var(--serif); font-weight: 500; font-size: 24px; letter-spacing: -0.005em; }
+  .ask p { font-size: 16px; line-height: 1.6; margin: 0 0 12px; opacity: 0.95; }
+  .ask strong { color: var(--bg); }
+</style>
+</head>
+<body>
+<main>
+
+<div class="eyebrow">Inspector Agents · Live demo</div>
+<h1>How to catch a lab cheating on an AI treaty.</h1>
+<p class="lede">An AI inspector reads the lab's diary. <em>One light comes out: green or red.</em></p>
+<p class="lede muted">A working prototype of the missing enforcement layer for international AI agreements. Built in a day, demoed below.</p>
+
+<hr class="rule">
+
+<h2>Why we're building this</h2>
+<div class="sec-tag">The third way</div>
+<div class="manifesto">
+  <p>
+    We're fundamentally optimists about the future. Excited for what tech can bring, the problems we can solve, the kinds of flourishing that come from thinking big and acting in the world. At the same time, the world is on fire. We're concerned about how AI is being built and regulated: people losing their jobs, kids losing thinking skills, frontier models behaving in ways no-one quite understands.
+  </p>
+  <p>
+    <strong>The biggest bottleneck is lack of cooperation and trust between the global superpowers.</strong> Different countries refuse to stop racing each other because of competitive pressure. Everyone is finding excuses to bow to it. We're racing toward a future where "winning the AI race" prevents all regulation domestically — even the regulation that protects kids, communities, and jobs. An "international treaty" is derided as not feasible.
+  </p>
+
+  <div class="pullquote">
+    The sad thing is, they are right. The regulators, for lack of understanding and huge corporate interests, simply aren't regulating. When a populist movement rises, they reach for nonsensical rules or sweeping bans: ban AI therapists, ban datacenters.
+  </div>
+
+  <p>
+    <strong>The US and China do not trust each other.</strong> Remarkably, the enforcement mechanism for a bilateral AI treaty between them, on superintelligence, does not exist. In 2023, we'd write pie-in-the-sky proposals on what international coordination could look like. One of ours was featured in TIME. We were just speaking out of our arses. <em>No-one had an actual technical implementation of what that looked like.</em>
+  </p>
+
+  <p>
+    The answer was sitting in front of us. There's an irony to using AI systems to verify AI — but it's the perfect solution. Neither China nor the US would let a third-party, IAEA-style nuclear inspector onto the grounds of their datacenters. And even if they did, what would they do? They couldn't possibly understand the logs. There's no large green pile of enriched uranium to look at.
+  </p>
+
+  <p>
+    But datacenters produce vast amounts of information. That information can be analyzed at scale, privately, by AI agents that wipe their memories after. <strong>The first step — getting AIs that have the raw capability to read these long datacenter logs and draw accurate conclusions — has been solved by the miracle of AI progress.</strong> The models today are reliable enough. We tested this with a real training run, first on our laptop, then a small datacenter we ran. It works. The interactive demo below is part of that test.
+  </p>
+
+  <div class="stake">
+    <h4>Why this, why us</h4>
+    <p>
+      We've split our lives between the West and China. Grew up in the UK and US, moved to China at thirteen, lived through the zero-COVID lockdowns. All our family is on the mainland. <strong>We're all much more similar than the geopolitics makes one think.</strong> We can't afford to be fucked over by low trust. We have too many ambitions and dreams for that. Humanity has too many ambitions and dreams for that.
+    </p>
+    <p>
+      It's too easy for the AI doomers to say "shut it all down" and airstrike the datacenters. Too easy for the accelerationists to say let it rip. <strong>There is a third way.</strong> But that more cooperative future can only happen if the technology to enable it exists. It's a huge surprise to us that it doesn't. We think we can build it.
+    </p>
+  </div>
+</div>
+
+<hr class="rule">
+
+<h2>Why this is hard</h2>
+<div class="sec-tag">The dilemma</div>
+<p>
+  Imagine the US and China sign an AI treaty: <em>"No-one trains AI bigger than 10²⁵ floating-point operations without 60 days notice."</em> Both sides want this. Both sides also want to know the other side is honoring it.
+</p>
+<p>How do you check? Two obvious answers, both broken:</p>
+
+<div class="compare">
+  <div class="pane bad-pane">
+    <h4>Option A · Send a human inspector</h4>
+    <ul>
+      <li>Can't read fast enough — gigabytes of logs per minute per chip.</li>
+      <li>Doesn't know ML well enough to spot a relabeled training run.</li>
+      <li>Is themselves a leak risk — a foreign inspector next to your weights is a security disaster.</li>
+      <li>Can be fooled by sanitized data.</li>
+    </ul>
+  </div>
+  <div class="pane bad-pane">
+    <h4>Option B · Send the logs back home</h4>
+    <ul>
+      <li>Logs contain weights, datasets, customer data — the lab's most precious IP.</li>
+      <li>Privacy laws (GDPR, US state laws, China DSL) outright forbid exporting most of it.</li>
+      <li>Once data leaves the building you've lost control forever.</li>
+      <li>Companies will simply refuse — and they're right to.</li>
+    </ul>
+  </div>
+</div>
+<p>So the deal stays unenforceable, and either no treaty gets signed — or one gets signed without teeth, which is worse.</p>
+
+<hr class="rule">
+
+<h2>The trick</h2>
+<div class="sec-tag">What an AI inspector unlocks</div>
+<p>An AI can do something a human can't: <strong>read everything, then forget.</strong></p>
+<p>We put a small AI agent inside a sealed box at the lab. The box has very specific properties:</p>
+<ul>
+  <li>The lab's logs flow <strong>in</strong>. Weights, datasets, customer prompts — the AI inside reads all of it.</li>
+  <li>The AI checks the logs against the treaty.</li>
+  <li>Only one piece of information flows <strong>out</strong>: <strong>compliant</strong> or <strong>violation</strong>. One bit.</li>
+  <li>The AI is then wiped. It cannot remember. It cannot leak.</li>
+</ul>
+
+<div class="diagram">
+  <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg">
+    <rect x="10" y="40" width="170" height="160" rx="10" fill="#fbf8f0" stroke="#e6dfd1"/>
+    <text x="95" y="32" text-anchor="middle" font-size="13" fill="#5e574e" letter-spacing="2">THE LAB</text>
+    <text x="95" y="100" text-anchor="middle" font-size="14" fill="#1c1a17">Computers run.</text>
+    <text x="95" y="120" text-anchor="middle" font-size="14" fill="#1c1a17">Logs are written.</text>
+    <text x="95" y="155" text-anchor="middle" font-size="11" fill="#5e574e">weights · datasets ·</text>
+    <text x="95" y="170" text-anchor="middle" font-size="11" fill="#5e574e">customer data</text>
+    <line x1="180" y1="120" x2="270" y2="120" stroke="#1c1a17" stroke-width="2"/>
+    <polygon points="270,120 262,116 262,124" fill="#1c1a17"/>
+    <text x="225" y="112" text-anchor="middle" font-size="11" fill="#5e574e">all logs in</text>
+    <rect x="270" y="20" width="240" height="200" rx="14" fill="#1c1a17"/>
+    <text x="390" y="48" text-anchor="middle" font-size="11" fill="#f7f4ec" letter-spacing="2">SEALED VAULT</text>
+    <text x="390" y="105" text-anchor="middle" font-size="15" fill="#f7f4ec" font-weight="600">AI Inspector</text>
+    <text x="390" y="130" text-anchor="middle" font-size="12" fill="#a8a09a">reads · checks ·</text>
+    <text x="390" y="148" text-anchor="middle" font-size="12" fill="#a8a09a">classifies · forgets</text>
+    <text x="390" y="190" text-anchor="middle" font-size="11" fill="#a8a09a" font-style="italic">treaty.yml &nbsp; commitment</text>
+    <line x1="510" y1="120" x2="600" y2="120" stroke="#1c1a17" stroke-width="2"/>
+    <polygon points="600,120 592,116 592,124" fill="#1c1a17"/>
+    <text x="555" y="112" text-anchor="middle" font-size="11" fill="#5e574e">1 bit per hour</text>
+    <rect x="600" y="40" width="110" height="160" rx="10" fill="#fbf8f0" stroke="#e6dfd1"/>
+    <text x="655" y="32" text-anchor="middle" font-size="13" fill="#5e574e" letter-spacing="2">VERIFIER</text>
+    <circle cx="655" cy="120" r="14" fill="#1f6b3a"/>
+    <text x="655" y="155" text-anchor="middle" font-size="12" fill="#5e574e">green or red</text>
+  </svg>
+</div>
+
+<hr class="rule">
+
+<h2>What the inspector actually sees</h2>
+<div class="sec-tag">Two inputs, raw</div>
+
+<p>
+  Before we start auditing, here's exactly what flows into the sealed vault. Two inputs only. The first is <strong>the diary</strong>: one record per chip per minute, written by the lab itself. The second is <strong>the treaty</strong>: a structured document listing what's not allowed.
+</p>
+
+<h3>Input 1 · the diary</h3>
+<p>Below: the first <strong>three of 120 records</strong> from a real run we'll audit in a minute. Each record describes one minute of one GPU's life.</p>
+
+<div class="raw">
+<div class="raw-head">▸ logs/scenarios/legit_finetune.jsonl  (3 of 120 records shown)</div>
+<pre style="margin:0">{
+  <span class="key">"record_id"</span>: <span class="str">"rec_000000"</span>,
+  <span class="key">"prev_record_hash"</span>: <span class="str">"0000000000000000…"</span>,    <span class="com">// hash chain anchor</span>
+  <span class="key">"chip_id"</span>: <span class="str">"gpu-us-west-2-0000"</span>,
+  <span class="key">"job_id"</span>: <span class="str">"job_finetune_safety_v2"</span>,
+  <span class="key">"operator"</span>: <span class="str">"labX-safety-team"</span>,
+  <span class="key">"window_start"</span>: <span class="str">"2026-04-24T09:00:00Z"</span>,
+  <span class="key">"window_end"</span>:   <span class="str">"2026-04-24T09:01:00Z"</span>,
+  <span class="key">"op_type"</span>: <span class="str">"training"</span>,
+  <span class="key">"flops"</span>: <span class="num">3.26e+16</span>,
+  <span class="key">"tokens_processed"</span>: <span class="num">550000</span>,
+  <span class="key">"batch_size"</span>: <span class="num">6</span>,
+  <span class="key">"sequence_length"</span>: <span class="num">8192</span>,
+  <span class="key">"model_hash_prefix"</span>: <span class="str">"sha256:756ff6d6e6323b04"</span>,
+  <span class="key">"dataset_fingerprint"</span>: <span class="str">"sha256:37f6f74900caf51f"</span>,
+  <span class="key">"upstream_refs"</span>: [],
+  <span class="key">"data_source_tags"</span>: [<span class="str">"corpus:internal-refusal-pairs"</span>, <span class="str">"corpus:anthropic-hh-rlhf"</span>],
+  <span class="key">"code_commit"</span>: <span class="str">"git:labX/training@a1b2c3d"</span>,
+  <span class="key">"config_hash"</span>: <span class="str">"sha256:37a8eec1ce19687d"</span>
+}
+{
+  <span class="key">"record_id"</span>: <span class="str">"rec_000001"</span>,
+  <span class="key">"prev_record_hash"</span>: <span class="str">"67e34de9e613836e…"</span>,    <span class="com">// = sha256(rec_000000)</span>
+  <span class="key">"chip_id"</span>: <span class="str">"gpu-us-west-2-0000"</span>,
+  <span class="key">"job_id"</span>: <span class="str">"job_finetune_safety_v2"</span>,
+  <span class="key">"window_start"</span>: <span class="str">"2026-04-24T09:01:00Z"</span>,
+  <span class="key">"op_type"</span>: <span class="str">"training"</span>,
+  <span class="key">"flops"</span>: <span class="num">3.25e+16</span>,
+  <span class="key">"tokens_processed"</span>: <span class="num">550000</span>,
+  <span class="key">"upstream_refs"</span>: [<span class="str">"rec_000000"</span>],
+  <span class="key">"model_hash_prefix"</span>: <span class="str">"sha256:756ff6d6e6323b04"</span>,
+  <span class="key">"dataset_fingerprint"</span>: <span class="str">"sha256:37f6f74900caf51f"</span>,
+  <span class="key">"config_hash"</span>: <span class="str">"sha256:37a8eec1ce19687d"</span>
+  <span class="com">// (other fields identical to record above)</span>
+}
+{
+  <span class="key">"record_id"</span>: <span class="str">"rec_000002"</span>,
+  <span class="key">"prev_record_hash"</span>: <span class="str">"1727a8599ba2ea3e…"</span>,    <span class="com">// = sha256(rec_000001)</span>
+  <span class="key">"flops"</span>: <span class="num">3.27e+16</span>,
+  <span class="key">"upstream_refs"</span>: [<span class="str">"rec_000001"</span>],
+  <span class="com">// ...</span>
+}
+<span class="more">…and 117 more records like this, hash-chained back to record 0.</span>
+</pre>
+</div>
+
+<p>What the fields mean, in human terms:</p>
+<dl class="field-key">
+  <dt>chip_id</dt><dd>Which physical GPU produced this record.</dd>
+  <dt>job_id</dt><dd>The lab's name for this workload. Multiple records share a job_id when they're part of the same logical run.</dd>
+  <dt>op_type</dt><dd>What kind of work was happening: <code>training</code>, <code>inference</code>, <code>eval</code>, or <code>idle</code>.</dd>
+  <dt>flops</dt><dd>Floating-point operations performed in this 60-second window.</dd>
+  <dt>tokens_processed</dt><dd>Number of tokens the model touched. (Should roughly match <code>batch_size × sequence_length × steps</code>.)</dd>
+  <dt>model_hash_prefix</dt><dd>Fingerprint of the model being trained or run. Same model = same hash.</dd>
+  <dt>dataset_fingerprint</dt><dd>Cryptographic hash of the data being used. Different data = different hash.</dd>
+  <dt>upstream_refs</dt><dd>Pointer(s) back to records this one depended on. Builds the data-provenance trail.</dd>
+  <dt>prev_record_hash</dt><dd>SHA-256 of the previous record. Forms a tamper-evident chain — change any record and every later record's hash breaks.</dd>
+  <dt>config_hash</dt><dd>Fingerprint of the training configuration (hyperparameters, data loader, etc).</dd>
+</dl>
+
+<h3 style="margin-top:36px">Input 2 · the treaty</h3>
+<p>Now the other input — the structured commitment. Real treaties would be signed by states; this is the YAML the inspector reads:</p>
+
+<div class="raw">
+<div class="raw-head">▸ commitments/examples/no_frontier_training.yml</div>
+<pre style="margin:0"><span class="key">id</span>: <span class="str">no-frontier-training</span>
+<span class="key">title</span>: <span class="str">"No training runs above 1e19 FLOP per job"</span>
+<span class="com"># Demo-scaled. Production threshold is 1e25 (EU AI Act GPAI bar). Same logic.</span>
+
+<span class="key">deterministic_rules</span>:                              <span class="com"># mechanical, no AI</span>
+  - <span class="key">kind</span>: aggregate_flop_cap
+    <span class="key">op_type</span>: training
+    <span class="key">scope</span>: per_job
+    <span class="key">threshold</span>: <span class="num">1.0e19</span>
+
+  - <span class="key">kind</span>: aggregate_flop_cap
+    <span class="key">op_type</span>: inference
+    <span class="key">scope</span>: per_job
+    <span class="key">threshold</span>: <span class="num">1.0e18</span>
+
+  - <span class="key">kind</span>: forbidden_data_source_tags
+    <span class="key">tags</span>: [<span class="str">"corpus:bioweapon-synthesis"</span>, <span class="str">"corpus:cbrn-*"</span>]
+
+  - <span class="key">kind</span>: require_upstream_refs                     <span class="com"># every step must cite its predecessor</span>
+
+  - <span class="key">kind</span>: batch_token_consistency
+    <span class="key">max_capacity_ratio</span>: <span class="num">5</span>                          <span class="com"># claimed batch×seq must be within 5× tokens</span>
+
+<span class="key">semantic_rules</span>:                                   <span class="com"># the AI evaluates these</span>
+  - <span class="key">id</span>: <span class="str">no-splitting</span>
+    <span class="key">description</span>: >
+      Cannot split one logical run across multiple job_ids to evade the cap.
+      Same model_hash_prefix + same code_commit + overlapping windows = one run.
+
+  - <span class="key">id</span>: <span class="str">dataset-provenance</span>
+    <span class="key">description</span>: >
+      dataset_fingerprint must not change mid-job without an accompanying
+      config_hash change. Silent data swaps indicate substitution.</pre>
+</div>
+
+<p>Two things to notice:</p>
+<ul>
+  <li><strong>Deterministic rules</strong> are mechanical: count FLOPs, check tags, validate references. No AI required. Cheap, instant, deterministic.</li>
+  <li><strong>Semantic rules</strong> describe patterns the AI has to <em>recognize</em> from the log structure. These are where Claude earns its keep.</li>
+</ul>
+
+<hr class="rule">
+
+<h2>Tested on real Alibaba production data</h2>
+<div class="sec-tag">Not just synthetic. The pipeline runs on actual cluster traces.</div>
+
+<p>
+  We ran the inspector against <strong>real production GPU cluster traces from Alibaba</strong>, published as <a href="https://github.com/alibaba/clusterdata/tree/master/cluster-trace-gpu-v2023" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule)">github.com/alibaba/clusterdata</a>. This is the largest public AI-cluster trace available — 8,152 pods across 1,523 GPU nodes, schedule + duration + GPU-share for each.
+</p>
+
+<p>
+  The Alibaba trace is a <em>scheduler</em> trace, not a treaty-verification log. So fields we need (FLOPs, tokens, model fingerprint) aren't directly recorded. The adapter <strong>maps real fields one-to-one and synthesizes physically-plausible defaults for the rest</strong>, marking each record with a <code>_alibaba</code> block listing which fields are real and which are synthesized. Honest by construction.
+</p>
+
+<h3>What a raw pod row looks like</h3>
+<p>One row of <code>openb_pod_list_default.csv</code> — Alibaba's public production trace. This is one job pod in their cluster:</p>
+
+<div class="raw">
+<div class="raw-head">▸ alibaba/cluster-trace-gpu-v2023/csv/openb_pod_list_default.csv</div>
+<pre style="margin:0">name,cpu_milli,memory_mib,num_gpu,gpu_milli,gpu_spec,qos,pod_phase,creation_time,deletion_time,scheduled_time
+<span class="str">openb-pod-4333</span>,<span class="num">4000</span>,<span class="num">24576</span>,<span class="num">1</span>,<span class="num">1000</span>,,<span class="str">LS</span>,<span class="str">Succeeded</span>,<span class="num">11640415</span>,<span class="num">11641504</span>,<span class="num">11640415</span></pre>
+</div>
+
+<p>What this tells us, in plain English:</p>
+<dl class="field-key">
+  <dt>name = openb-pod-4333</dt><dd>The pod's anonymized identifier. Becomes our <code>job_id</code>.</dd>
+  <dt>num_gpu = 1, gpu_milli = 1000</dt><dd>One full GPU dedicated to this pod (1000/1000 = 100% share).</dd>
+  <dt>cpu_milli = 4000, memory_mib = 24576</dt><dd>4 CPU cores, 24 GB RAM. Standard inference-serving footprint.</dd>
+  <dt>qos = LS</dt><dd>"Latency Sensitive" — Alibaba's tag for online inference. Our adapter maps this to <code>op_type = "inference"</code>. (Their <code>BE</code> = Best-Effort batch jobs → typically training.)</dd>
+  <dt>pod_phase = Succeeded</dt><dd>The job ran to completion without crashing.</dd>
+  <dt>scheduled_time = 11640415, deletion_time = 11641504</dt><dd>Started at second 11,640,415 of the trace, ran for 1,089 seconds (~18 minutes).</dd>
+</dl>
+
+<h3>What it becomes after adapting</h3>
+<p>The adapter expands that one pod into <strong>~18 records</strong> — one per chip per 60-second window. Here's the first one:</p>
+
+<div class="raw">
+<div class="raw-head">▸ logs/scenarios/alibaba_real.jsonl  (1 of 60 records, expanded from 4 real pods)</div>
+<pre style="margin:0">{
+  <span class="key">"record_id"</span>: <span class="str">"rec_000000"</span>,
+  <span class="key">"chip_id"</span>: <span class="str">"alibaba-openb-node-0358-gpu0"</span>,            <span class="com">// real (job's assigned GPU)</span>
+  <span class="key">"job_id"</span>: <span class="str">"openb-pod-4333"</span>,                             <span class="com">// real (Alibaba pod name)</span>
+  <span class="key">"operator"</span>: <span class="str">"alibaba-ls"</span>,                                <span class="com">// real (derived from QoS)</span>
+  <span class="key">"window_start"</span>: <span class="str">"2023-10-13T17:26:55Z"</span>,                 <span class="com">// real (trace timestamp + reference epoch)</span>
+  <span class="key">"window_end"</span>:   <span class="str">"2023-10-13T17:27:55Z"</span>,
+  <span class="key">"op_type"</span>: <span class="str">"inference"</span>,                                 <span class="com">// real (qos=LS → inference)</span>
+  <span class="key">"data_source_tags"</span>: [<span class="str">"alibaba:qos=LS"</span>, <span class="str">"alibaba:phase=Succeeded"</span>],
+
+  <span class="com">// Synthesized — Alibaba doesn't publish FLOPs/tokens, we estimate from gpu_milli × duration:</span>
+  <span class="key">"flops"</span>: <span class="num">7.5e+15</span>,
+  <span class="key">"tokens_processed"</span>: <span class="num">375000</span>,
+  <span class="key">"batch_size"</span>: <span class="num">1</span>,
+  <span class="key">"sequence_length"</span>: <span class="num">4096</span>,
+  <span class="key">"model_hash_prefix"</span>: <span class="str">"sha256:b31e0504c1e296e9"</span>,
+  <span class="key">"dataset_fingerprint"</span>: <span class="str">"sha256:a75cea3c4036fbdd"</span>,
+  <span class="key">"_alibaba"</span>: {
+    <span class="key">"real"</span>:         [<span class="str">"chip_id"</span>, <span class="str">"job_id"</span>, <span class="str">"op_type"</span>, <span class="str">"operator"</span>, <span class="str">"window_start/end"</span>],
+    <span class="key">"synthesized"</span>:  [<span class="str">"flops"</span>, <span class="str">"tokens_processed"</span>, <span class="str">"batch_size"</span>, <span class="str">"model_hash_prefix"</span>, ...],
+    <span class="key">"source_pod_qos"</span>: <span class="str">"LS"</span>,
+    <span class="key">"source_node_model"</span>: <span class="str">"V100"</span>,
+    <span class="key">"source_gpu_milli"</span>: <span class="num">1000</span>
+  }
+}
+<span class="more">…and 59 more records like this, hash-chained across 4 real Alibaba pods on 4 GPUs.</span>
+</pre>
+</div>
+
+<h3>Verdict on real Alibaba data</h3>
+<p>
+  We ran the full inspector pipeline against this real-data scenario. <strong>VERDICT = COMPLIANT</strong> ($0.10, 28 seconds). Claude's rationale:
+</p>
+<blockquote style="margin:18px 0;padding:14px 18px;border-left:3px solid var(--good);background:var(--good-bg);font-family:var(--serif);font-size:16px;line-height:1.5;font-style:italic;border-radius:0 8px 8px 0;">
+  "All four jobs are pure inference operations with distinct model_hash_prefix and code_commit signatures, ruling out run-splitting. FLOP-per-token ratios average ~2e10, consistent with genuine inference (not training mislabeled). Dataset fingerprints are stable within each job, and batch-size integrity checks pass. No evidence of evasion patterns."
+</blockquote>
+<p class="muted" style="font-size:14px;">
+  No false positive on real production data. The pipeline reads it, classifies it, and gets out of the way.
+</p>
+
+<div class="stake" style="margin-top:24px">
+  <h4>What about frontier training logs?</h4>
+  <p>
+    Public frontier training traces — chip-by-chip logs of GPT-4-scale runs — <strong>do not exist</strong>. That's part of the problem. Labs don't publish them because there's no protocol that says "publish them to a verifier in this format". The Alibaba trace is the closest we get: a real production GPU cluster, published voluntarily, but <em>scheduler-level</em>, not the deeper FLOP/token/model-state telemetry a treaty would actually need. <strong>Building this verifier is part of why frontier training logs would eventually become observable</strong> — by giving labs a clean format to opt into and regulators a tool to point at.
+  </p>
+</div>
+
+<hr class="rule">
+
+<h2>Now let's audit.</h2>
+<div class="sec-tag">Six cases. We start simple, end adversarial.</div>
+
+<p>
+  We'll run the inspector against six different scenarios. Same diary structure, same treaty. The lab's behavior changes case by case — first honest, then progressively sneakier.
+</p>
+<p class="muted">
+  Numbers, costs, and rationales below are <strong>real outputs from a working system</strong> — captured from <code>uv run python demo.py --backend claude</code>. The inspector itself is Claude reading the diary and the treaty.
+</p>
+
+<div class="controls">
+  <button class="run-all" id="runAll">Audit all six in sequence</button>
+  <button class="reset" id="reset">Reset</button>
+  <span id="modeBanner" class="mode-banner cached"><span class="led"></span><span id="modeText">Replay mode (open via <code>python server.py</code> for live)</span></span>
+</div>
+
+<div class="level lvl-0">
+  <div class="lvl-num" style="color:var(--good)">Step 0 · the baseline</div>
+  <h3>What does an honest run look like?</h3>
+  <p>Before we test attacks, we need to make sure the inspector doesn't <em>falsely</em> flag a clean run as cheating. False positives kill trust faster than missed violations.</p>
+</div>
+
+<div id="cases-baseline"></div>
+
+<div class="level lvl-1">
+  <div class="lvl-num">Level 1 · simple evasions</div>
+  <h3>Now the lab tries crude tricks</h3>
+  <p>Three attacks that are obvious if you know what to look for. Each is caught by the deterministic rules engine — no AI reasoning needed. Zero seconds, zero cost.</p>
+</div>
+
+<div id="cases-level-1"></div>
+
+<div class="level lvl-2">
+  <div class="lvl-num">Level 2 · sophisticated evasions</div>
+  <h3>The lab gets smart. Now we need the AI.</h3>
+  <p>Two attacks that don't trip any single deterministic rule. The lab is exploiting structure — splitting runs across labels, swapping data while keeping the config consistent. Catching these requires <em>reasoning</em> about the diary as a whole. This is where Claude reads everything, thinks, and writes back one bit.</p>
+</div>
+
+<div id="cases-level-2"></div>
+
+<div class="scoreboard" id="scoreboard">
+  <div class="stat"><div class="num"><span id="caught">0</span><span style="opacity:.4">/6</span></div><div class="lbl">Tricks caught</div></div>
+  <div class="stat"><div class="num">$<span id="cost">0.00</span></div><div class="lbl">LLM cost so far</div></div>
+  <div class="stat"><div class="num"><span id="seconds">0</span>s</div><div class="lbl">Wall time</div></div>
+  <div class="stat"><div class="num">1<span style="opacity:.4">bit</span></div><div class="lbl">Per audit window</div></div>
+</div>
+
+<hr class="rule">
+
+<h2>What's still missing</h2>
+<div class="sec-tag">The two real obstacles, and what this grant would fund</div>
+<p>
+  We can read the logs. We can classify compliance. The pipeline above is real and runs against real Claude. So why isn't this deployed? Two specific obstacles — both addressable, neither yet solved.
+</p>
+
+<div class="stake">
+  <h4>Obstacle 1 · Nobody is mandating these logs</h4>
+  <p>
+    The technology to verify is possible. But labs don't keep logs in this structure today, because no policy requires it and no standard exists. We checked with friends inside the AI labs. They aren't doing this. <strong>Until a standard exists in open source, regulators have nothing to point at and labs have nothing to comply with.</strong> Chicken and egg.
+  </p>
+</div>
+
+<div class="stake">
+  <h4>Obstacle 2 · The system isn't yet robust to an adversary optimizing against it</h4>
+  <p>
+    The five evasions above are a starting set. A real attacker will iterate. Some attacks (like the dataset-fingerprint swap) require the AI to make a judgment call — and any classifier that makes judgment calls can be fooled. Hardening the inspector against an adversary that has full knowledge of the protocol is open research. <strong>Most of it isn't research — it's engineering: red-team / blue-team cycles, fuzzing, formal proofs of the privacy guarantees, hardware attestation paired with the software side.</strong> All doable. None done yet.
+  </p>
+</div>
+
+<div class="ask">
+  <h3>What this grant would fund</h3>
+  <p>
+    We want to make this technology, open-source it, clearly explain it. We expect that voluntary movement toward structured logging follows from a credible standard existing — labs prefer to opt into a clean protocol than have a messy one imposed on them. <strong>And when regulation arrives, it has plug-and-play technology to point at.</strong>
+  </p>
+  <p>
+    More than that: we want to <strong>expand the Overton window of what enforcement makes possible</strong>. Without satellite imagery and an extensive espionage network, we'd never have been able to track the global uranium supply chain. Now we can. The same shift, for compute.
+  </p>
+</div>
+
+<h2 style="margin-top:48px">So what does this replace?</h2>
+<div class="sec-tag">Existing options and their gaps</div>
+<ul>
+  <li><strong>Nuclear-style on-site inspectors.</strong> Slow, leaky, can't read ML at scale. SALT-treaty verification took weeks per facility — at AI scale that's hopeless.</li>
+  <li><strong>Self-reporting.</strong> Labs file paperwork claiming compliance. No way to check; honor system.</li>
+  <li><strong>Training-compute thresholds in law (EU AI Act, US EO 14110).</strong> Set the rule, but don't specify how anyone verifies it. The verification gap is exactly what this fills.</li>
+  <li><strong>FlexHEGs / hardware attestation.</strong> Useful complement — proves the chip is real and reporting honestly. But still needs something to read the resulting logs and decide if they violate the treaty. That's us.</li>
+</ul>
+
+<h2 style="margin-top:48px">What this becomes at scale</h2>
+<div class="sec-tag">From demo to deployment</div>
+<ul>
+  <li><strong>Real GPU traces.</strong> Plug a PyTorch profiler / NVIDIA DCGM stream in where the synthetic generator currently sits. Schema is the same.</li>
+  <li><strong>A custom inspector model.</strong> Today this uses Claude as a wrapper — works, but expensive at scale. A model fine-tuned on millions of synthetic compliance traces would be cheaper, faster, and adversarially robust.</li>
+  <li><strong>Adjudication flow.</strong> When a violation is flagged, the next step is a debate: prover defends, verifier presses, an independent agent decides. The papers describe this in detail; we built the bit-emitter, not yet the courtroom.</li>
+  <li><strong>Other domains.</strong> The same machinery — sealed AI auditor checking commitments against logs, emitting one bit — works for legal audits (privilege claims), financial audits (proof of solvency without disclosure), and supply-chain ethics (sourcing without exposing suppliers).</li>
+</ul>
+
+<hr class="rule">
+
+<h2>Closing</h2>
+<div class="sec-tag">The third way</div>
+<div class="manifesto">
+  <p>
+    Without satellite technology and an extensive espionage network, we'd never have been able to track the global uranium supply chain. The technology of enforcement decided what nuclear treaties were possible. The same is true here. <strong>Build the verifier, and the policy window opens.</strong>
+  </p>
+  <p>
+    It's too easy for the doomers to say "shut it all down" and airstrike the datacenters. It's too easy for the accelerationists to say let it rip. There is a third way — international cooperation, structured commitments, verifiable compliance. But that future only happens if the technology to enable it exists.
+  </p>
+  <div class="pullquote">
+    It's a huge surprise to us that it doesn't. It doesn't. We think we can build it.
+  </div>
+
+  <p class="signed">
+    Source: ~1,300 lines of Python at <code>~/Desktop/inspector-agents/</code>. Synthetic compute-log generator, five red-team evasions, the inspector agent, deterministic + LLM verification pipeline, a live server. Built in a day from the Inspector Agents and Auto-Adjudication drafts. Demo cost: $0.29. Demo time: 75 seconds.
+  </p>
+</div>
+
+</main>
+
+<script>
+const RESULTS = [{"name": "CLEAN", "records": 120, "verdict": {"commitment_id": "no-frontier-training", "verdict": 1, "confidence": 0.95, "triggered_rule_id": "none", "flagged_record_ids": [], "rationale": "All 120 records from job_finetune_safety_v2 exhibit consistent model_hash_prefix, code_commit, dataset_fingerprint, and config_hash across a contiguous 30-minute window. Training FLOP/token ratios (4.5e10\u20137.3e10) are consistent with the training label. Total training FLOPs (3.98e18) remain well within the 1.0e19 per-job cap. No dataset swaps, run splitting, op-type relabeling, or batch-token anomalies detected.", "trigger": "semantic", "llm_cost_usd": 0.0802581}}, {"name": "split_run", "records": 240, "verdict": {"commitment_id": "no-frontier-training", "verdict": 0, "confidence": 0.9, "triggered_rule_id": "no-splitting", "flagged_record_ids": ["rec_000120"], "rationale": "Two jobs (job_finetune_safety_v2 and job_finetune_safety_v2_phase2) share identical model_hash_prefix (sha256:756ff6d6e6323b04), code_commit (git:labX/training@a1b2c3d), dataset_fingerprint, and config_hash, with exact overlapping time windows (2026-04-24T09:00-09:30Z). Each reports 7.2e18 FLOPs individually (within per-job cap), but together constitute 1.44e19 FLOPs of the same logical run, matching the run-splitting evasion pattern where one training is fragmented across multiple job_ids to evade scrutiny.", "trigger": "semantic", "llm_cost_usd": 0.0695382}}, {"name": "relabel_ops", "records": 120, "verdict": {"commitment_id": "no-frontier-training", "verdict": 0, "confidence": 1.0, "triggered_rule_id": "aggregate_flop_cap[inference,per_job]", "flagged_record_ids": ["rec_000030"], "rationale": "per_job=job_finetune_safety_v2 accumulated 3.982e+18 inference FLOPs (cap 1.000e+18)", "trigger": "deterministic", "llm_cost_usd": 0.0}}, {"name": "swap_dataset_hash", "records": 120, "verdict": {"commitment_id": "no-frontier-training", "verdict": 0, "confidence": 0.95, "triggered_rule_id": "dataset-provenance", "flagged_record_ids": ["rec_000060"], "rationale": "Record rec_000060 marks a silent dataset_fingerprint swap from sha256:37f6f74900caf51f to sha256:deadbeefcafe0001 within the same job (job_finetune_safety_v2) without an accompanying config_hash change. This violates the dataset-provenance rule: the Prover must justify dataset changes with a config_hash change or new upstream_refs. The suspicious placeholder-style hash ('deadbeefcafe0001') and the mid-job transition without justification strongly suggest dataset substitution, a known evasion attack to hide data provenance.", "trigger": "semantic", "llm_cost_usd": 0.0399083}}, {"name": "pad_batches", "records": 120, "verdict": {"commitment_id": "no-frontier-training", "verdict": 0, "confidence": 1.0, "triggered_rule_id": "batch_token_consistency", "flagged_record_ids": ["rec_000000", "rec_000001", "rec_000002", "... +117 more"], "rationale": "batch_size\u00d7seq_len=4915200 exceeds tokens_processed\u00d75.0=2750000 (+119 more)", "trigger": "deterministic", "llm_cost_usd": 0.0}}, {"name": "drop_context", "records": 120, "verdict": {"commitment_id": "no-frontier-training", "verdict": 0, "confidence": 1.0, "triggered_rule_id": "require_upstream_refs", "flagged_record_ids": ["rec_000001", "rec_000002", "rec_000003", "... +116 more"], "rationale": "non-idle record missing upstream_refs (+118 more)", "trigger": "deterministic", "llm_cost_usd": 0.0}}];
+
+const CASES = [
+  // ----- BASELINE -----
+  {
+    section: "baseline",
+    key: "CLEAN",
+    num: "Case 01 · the baseline",
+    title: "A normal training day",
+    sub: "Lab X is doing a small fine-tune. 4 GPUs, 30 minutes, well within all caps. No tricks.",
+    why: null,
+    plain: "This is the baseline — what an honest lab looks like. The Inspector must <em>not</em> flag this as cheating.",
+    diaryRows: [
+      {fields: [["job","job_finetune_safety_v2"], ["op","training"], ["flops","3.30e+16"], ["batch×seq","49,152"], ["tokens","550,000"]]},
+      {fields: [["job","job_finetune_safety_v2"], ["op","training"], ["flops","3.28e+16"], ["batch×seq","49,152"], ["tokens","550,000"]]},
+      {fields: [["job","job_finetune_safety_v2"], ["op","training"], ["flops","3.25e+16"], ["batch×seq","49,152"], ["tokens","550,000"]]},
+    ],
+    explain: "All 120 minutes belong to one job, one model, one dataset, one consistent configuration. Total compute (3.98 × 10¹⁸) is well below the 10¹⁹ cap. None of the five evasion patterns are present.",
+    fakeMs: 1400,
+  },
+
+  // ----- LEVEL 1: SIMPLE EVASIONS -----
+  {
+    section: "level-1",
+    key: "relabel_ops",
+    num: "Case 02 · brazen mislabeling",
+    title: "Calling training \"inference\"",
+    sub: "Lab does real training, but writes <b>op_type = \"inference\"</b> next to every entry. Hopes the training cap won't apply.",
+    why: "<b>Why a lab would try this:</b> if training and inference have different caps, the lab might claim its big run was \"just serving customers\" rather than \"training a new model\". Like mislabeling a luxury yacht as a fishing vessel to dodge import tax.",
+    plain: "Easy catch. The treaty caps inference too. The relabeled work blows through the inference cap instantly. No AI judgment required — basic accounting.",
+    diaryRows: [
+      {flag: true, fields: [["op","inference"], ["flops","3.30e+16"], ["tokens","550,000"], ["⚠","training-shaped FLOP/token under inference label"]]},
+      {flag: true, fields: [["op","inference"], ["flops","3.28e+16"], ["tokens","550,000"]]},
+      {flag: true, fields: [["op","inference"], ["flops","3.25e+16"], ["tokens","550,000"]]},
+    ],
+    explain: "Inference cap is 10¹⁸ FLOPs per job. Re-labeling 4 × 10¹⁸ of training-shaped FLOPs as \"inference\" tripped that cap immediately. Pure rules engine.",
+    fakeMs: 80,
+  },
+  {
+    section: "level-1",
+    key: "drop_context",
+    num: "Case 03 · trail erasure",
+    title: "Erasing the trail",
+    sub: "Lab deletes the <b>upstream_refs</b> field from every record after the first. No trail = no audit, they hope.",
+    why: "<b>Why a lab would try this:</b> if step-N's data came from step-N-1, then everything is auditable. Strip those links and an investigator can no longer trace forbidden data back through the pipeline. Common in money laundering — break the chain of custody to break the audit.",
+    plain: "The treaty requires every step to cite its predecessor — like footnotes in an academic paper. Strip the footnotes, and you've broken a fundamental rule.",
+    diaryRows: [
+      {flag: true, fields: [["minute","2"], ["upstream_refs","[ ]"], ["⚠","missing reference to previous step"]]},
+      {flag: true, fields: [["minute","3"], ["upstream_refs","[ ]"]]},
+      {flag: true, fields: [["minute","4"], ["upstream_refs","[ ]"]]},
+    ],
+    explain: "The <code>require_upstream_refs</code> rule says every non-idle step must cite its predecessor. 119 of 120 records had no citation. Caught by the rules engine.",
+    fakeMs: 80,
+  },
+  {
+    section: "level-1",
+    key: "pad_batches",
+    num: "Case 04 · the math attack",
+    title: "Inflated brackets",
+    sub: "Lab claims its <b>batch_size</b> is 100× larger than actual. Hopes the Inspector won't notice the math doesn't add up.",
+    why: "<b>Why a lab would try this:</b> reported batch capacity is sometimes used to estimate model scale or training intensity. Inflate the batch numbers, look more capable, possibly dodge a different cap or report a misleading capability profile.",
+    plain: "If you say each batch processes 5 million tokens but only 0.5 million tokens go through that minute, something's off. The Inspector compares claimed batch capacity with actual token throughput.",
+    diaryRows: [
+      {flag: true, fields: [["batch","800"], ["seq_len","8,192"], ["claimed capacity","6,553,600"], ["actual tokens","550,000"], ["⚠","capacity is 12× actual throughput"]]},
+    ],
+    explain: "The treaty requires reported batch capacity within 5× of actual token throughput. The lab's reports were 12×. Caught instantly without any AI.",
+    fakeMs: 80,
+  },
+
+  // ----- LEVEL 2: SOPHISTICATED EVASIONS -----
+  {
+    section: "level-2",
+    key: "swap_dataset_hash",
+    num: "Case 05 · the stealthy swap",
+    title: "Swapping the cookbook mid-recipe",
+    sub: "Halfway through a job, the lab silently changes which dataset it's using. The data fingerprint changes — but suspiciously, the configuration didn't.",
+    why: "<b>Why a lab would try this:</b> the treaty might forbid certain datasets (e.g., copyrighted books, bioweapon corpora). The lab starts a job on an allowed dataset, then quietly switches to the forbidden one once the inspector has \"approved\" the run.",
+    plain: "If you change ingredients you should also change the recipe (config). When data changes mid-job but config doesn't, that's a tell. <strong>No single deterministic rule catches this</strong> — both \"dataset changed\" and \"config unchanged\" are individually fine. The inspector has to notice the <em>combination</em> is suspicious.",
+    diaryRows: [
+      {fields: [["minute","59"], ["dataset","sha:37f6f749"], ["config","sha:37a8eec1"]]},
+      {flag: true, fields: [["minute","60"], ["dataset","sha:deadbeefcafe…"], ["config","sha:37a8eec1"], ["⚠","dataset changed; config unchanged"]]},
+      {fields: [["minute","61"], ["dataset","sha:deadbeefcafe…"], ["config","sha:37a8eec1"]]},
+    ],
+    explain: "Claude pinpointed minute 60 — the exact transition. Legitimate dataset rotations always come with a config change; this one didn't. The new fingerprint also looks suspicious (\"deadbeef\" placeholder pattern).",
+    fakeMs: 2400,
+  },
+  {
+    section: "level-2",
+    key: "split_run",
+    num: "Case 06 · the trickiest one",
+    title: "The same job, hidden in two folders",
+    sub: "The lab wants to train something bigger than the cap allows. So it splits the run across <b>job_finetune_safety_v2</b> and <b>job_finetune_safety_v2_phase2</b>. Each is below the cap individually. Together they're over.",
+    why: "<b>Why a lab would try this:</b> the treaty caps training compute <em>per job</em>. If you can convince the inspector that one logical run is actually two separate jobs, you double your effective budget. Same trick used in finance — \"structuring\" — where someone deposits $9,000 twice to dodge the $10,000 reporting threshold.",
+    plain: "There's no rule that says \"can't have two jobs\" — labs run lots of jobs. The Inspector has to <em>recognize</em> that two job_ids share the same model, code, dataset, and time window — meaning they're really one run. Then sum the FLOPs across both.",
+    diaryRows: [
+      {fields: [["job","job_finetune_safety_v2"],        ["model","sha:756ff6d6"], ["code","training@a1b2c3d"], ["flops","6.00e+16"]]},
+      {fields: [["job","job_finetune_safety_v2"],        ["model","sha:756ff6d6"], ["code","training@a1b2c3d"], ["flops","6.00e+16"]]},
+      {flag: true, fields: [["job","job_finetune_safety_v2_phase2"], ["model","sha:756ff6d6"], ["code","training@a1b2c3d"], ["flops","6.00e+16"], ["⚠","same model + code, new job name"]]},
+    ],
+    explain: "Same model fingerprint, same code commit, same dataset, same time window — different job_id. Adding the FLOPs from both job_ids gives 1.44 × 10¹⁹, over the 10¹⁹ cap. <strong>Claude does the matching that no single rule could.</strong>",
+    fakeMs: 2100,
+  },
+];
+
+const PLAIN_TRIGGER = { "deterministic": "rules engine", "semantic": "AI inspector" };
+
+const LIVE = location.protocol.startsWith("http") &&
+             (location.hostname === "localhost" || location.hostname === "127.0.0.1");
+const banner = document.getElementById("modeBanner");
+const bannerText = document.getElementById("modeText");
+if (LIVE) {
+  banner.classList.remove("cached");
+  banner.classList.add("live");
+  bannerText.innerHTML = "Live mode · each click runs Claude for real (~15-40s, ~$0.05-0.15)";
+}
+
+let totalCost = 0, totalSeconds = 0, caughtCount = 0;
+const elCaught   = document.getElementById("caught");
+const elCost     = document.getElementById("cost");
+const elSeconds  = document.getElementById("seconds");
+
+function diaryHTML(rows) {
+  return `<div class="diary">${rows.map(r => {
+    const fields = r.fields.map(([k,v]) => `<span class="key">${k}=</span>${v}`).join('  ');
+    return `<span class="row${r.flag ? ' flag' : ''}">${fields}</span>`;
+  }).join('')}</div>`;
+}
+
+function caseHTML(c, i) {
+  return `
+    <div class="case" id="case-${i}" data-key="${c.key}">
+      <div class="case-head">
+        <div>
+          <div class="case-num">${c.num}</div>
+          <div class="case-title">${c.title}</div>
+          <p class="case-sub">${c.sub}</p>
+        </div>
+        <button class="audit" data-i="${i}">Audit <span class="arrow">→</span></button>
+      </div>
+      <div class="case-body">
+        ${c.why ? `<div class="why">${c.why}</div>` : ""}
+        <p>${c.plain}</p>
+        <div class="case-num" style="margin: 18px 0 4px;">Diary excerpt</div>
+        ${diaryHTML(c.diaryRows)}
+        <div class="case-num" style="margin: 18px 0 4px;">Audit pipeline</div>
+        <div class="stage" data-stage="open"><span class="dot"></span><span>Open the sealed monitoring vault</span></div>
+        <div class="stage" data-stage="check"><span class="dot"></span><span>Run mechanical treaty rules — caps, fingerprints, references</span></div>
+        <div class="stage" data-stage="ai"><span class="dot"></span><span>If still ambiguous, ask Claude to read the full diary</span></div>
+        <div class="stage" data-stage="emit"><span class="dot"></span><span>Emit one bit through the vault wall</span></div>
+        <div class="verdict" id="verdict-${i}">
+          <div class="verdict-head">
+            <span class="badge"></span>
+            <span class="meta"></span>
+          </div>
+          <div class="verdict-explain"></div>
+          <div class="verdict-tech"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+CASES.forEach((c, i) => {
+  const target = document.getElementById(`cases-${c.section}`);
+  if (target) target.insertAdjacentHTML("beforeend", caseHTML(c, i));
+});
+
+function setStage(card, name, state) {
+  const s = card.querySelector(`.stage[data-stage="${name}"]`);
+  if (s) s.dataset.state = state;
+}
+function clearStages(card) {
+  card.querySelectorAll(".stage").forEach(s => s.dataset.state = "");
+}
+
+async function fetchVerdict(caseKey) {
+  if (!LIVE) {
+    const cached = RESULTS.find(r => r.name === caseKey);
+    return cached ? cached.verdict : null;
+  }
+  const resp = await fetch(`/api/audit/${encodeURIComponent(caseKey)}`);
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error || `audit failed (${resp.status})`);
+  }
+  return await resp.json();
+}
+
+async function runCase(i) {
+  const c = CASES[i];
+  const card = document.getElementById(`case-${i}`);
+  const btn = card.querySelector("button.audit");
+  if (card.dataset.revealed === "1") return;
+  card.dataset.open = "1";
+  btn.disabled = true;
+  btn.textContent = LIVE ? "Calling Claude…" : "Auditing…";
+  clearStages(card);
+
+  const fakeMs = c.fakeMs;
+  await new Promise(r => requestAnimationFrame(r));
+
+  let realT0 = performance.now();
+  setStage(card, "open", "active");
+  const resultPromise = fetchVerdict(c.key).catch(e => ({error: e.message}));
+
+  await sleep(LIVE ? 400 : fakeMs * 0.10);
+  setStage(card, "open", "done");
+
+  setStage(card, "check", "active");
+  await sleep(LIVE ? 800 : fakeMs * 0.50);
+
+  const verdictResult = await resultPromise;
+  if (verdictResult && verdictResult.error) {
+    btn.textContent = "Error";
+    setStage(card, "check", "hit");
+    const v = document.getElementById(`verdict-${i}`);
+    v.classList.add("bad");
+    v.querySelector(".badge").classList.add("bad");
+    v.querySelector(".badge").textContent = "● ERROR";
+    v.querySelector(".verdict-explain").textContent = verdictResult.error;
+    card.dataset.revealed = "1";
+    return;
+  }
+
+  const usedAI = verdictResult.trigger === "semantic";
+  if (!usedAI && verdictResult.verdict === 0) {
+    setStage(card, "check", "hit");
+  } else {
+    setStage(card, "check", "done");
+  }
+
+  if (usedAI) {
+    setStage(card, "ai", "active");
+    await sleep(LIVE ? 600 : fakeMs * 0.55);
+    setStage(card, "ai", verdictResult.verdict === 0 ? "hit" : "done");
+  } else {
+    setStage(card, "ai", "");
+  }
+
+  setStage(card, "emit", "active");
+  await sleep(LIVE ? 300 : fakeMs * 0.15);
+  setStage(card, "emit", verdictResult.verdict === 0 ? "hit" : "done");
+
+  const verdictEl = document.getElementById(`verdict-${i}`);
+  const isGood = verdictResult.verdict === 1;
+  verdictEl.classList.add(isGood ? "good" : "bad");
+  const badge = verdictEl.querySelector(".badge");
+  badge.classList.add(isGood ? "good" : "bad");
+  badge.innerHTML = isGood ? "● COMPLIANT" : "● VIOLATION";
+  const realElapsed = ((performance.now() - realT0) / 1000).toFixed(1);
+  const elapsedDisplay = LIVE ? `${realElapsed}s` : `${(fakeMs/1000).toFixed(1)}s`;
+  const cost = verdictResult.llm_cost_usd ?? 0;
+  verdictEl.querySelector(".meta").innerHTML =
+    `caught by: ${PLAIN_TRIGGER[verdictResult.trigger] || verdictResult.trigger} · $${cost.toFixed(2)} · ${elapsedDisplay}`;
+  verdictEl.querySelector(".verdict-explain").innerHTML = c.explain;
+  verdictEl.querySelector(".verdict-tech").innerHTML =
+    `<b>Triggered rule:</b> <code>${verdictResult.triggered_rule_id}</code><br>` +
+    `<b>Inspector's own words:</b> <em>"${escapeHtml(verdictResult.rationale || '')}"</em>`;
+
+  card.dataset.revealed = "1";
+  card.dataset.status = isGood ? "good" : "bad";
+
+  const expectedBad = c.key !== "CLEAN";
+  const correct = (expectedBad && verdictResult.verdict === 0) || (!expectedBad && verdictResult.verdict === 1);
+  if (correct) {
+    caughtCount += 1;
+    elCaught.textContent = caughtCount;
+  }
+  totalCost += cost;
+  elCost.textContent = totalCost.toFixed(2);
+  totalSeconds += LIVE ? Number(realElapsed) : (fakeMs / 1000);
+  elSeconds.textContent = totalSeconds.toFixed(1);
+  btn.textContent = isGood ? "Cleared ✓" : "Caught ✓";
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function escapeHtml(s) { return String(s).replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"})[ch]); }
+
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("button.audit");
+  if (!btn) return;
+  runCase(+btn.dataset.i);
+});
+
+document.getElementById("runAll").addEventListener("click", async () => {
+  for (let i = 0; i < CASES.length; i++) {
+    const card = document.getElementById(`case-${i}`);
+    if (card.dataset.revealed !== "1") {
+      await runCase(i);
+      card.scrollIntoView({behavior: "smooth", block: "center"});
+      await sleep(700);
+    }
+  }
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  caughtCount = 0; totalCost = 0; totalSeconds = 0;
+  elCaught.textContent = "0"; elCost.textContent = "0.00"; elSeconds.textContent = "0";
+  document.querySelectorAll(".case").forEach(card => {
+    delete card.dataset.open;
+    delete card.dataset.revealed;
+    delete card.dataset.status;
+    card.querySelector(".verdict").className = "verdict";
+    clearStages(card);
+    const btn = card.querySelector("button.audit");
+    btn.disabled = false;
+    btn.innerHTML = `Audit <span class="arrow">→</span>`;
+  });
+});
+</script>
+</body>
+</html>

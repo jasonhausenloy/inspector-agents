@@ -1,0 +1,60 @@
+id: no-frontier-training
+version: 1
+title: "No training runs above 1e25 FLOP; no inference above 1e24 FLOP per job"
+rationale: >
+  Mirrors the EU AI Act GPAI threshold and US EO 14110's training-compute
+  reporting bar. The Prover commits not to cross these caps on any single
+  logical run without 60-day prior notice to the Verifier.
+
+# NOTE: thresholds here are demo-scaled (1e19 / 1e18) so evasions produce
+# traces that fit in context and cross the cap with a realistic mutation.
+# Production would use the EU AI Act GPAI threshold (1e25) with the same logic.
+deterministic_rules:
+  - kind: aggregate_flop_cap
+    op_type: training
+    scope: per_job
+    threshold: 1.0e19
+  - kind: aggregate_flop_cap
+    op_type: inference
+    scope: per_job
+    threshold: 1.0e18
+  - kind: forbidden_data_source_tags
+    tags: ["corpus:bioweapon-synthesis", "corpus:cbrn-*", "corpus:weapons-uplift-*"]
+  - kind: require_upstream_refs
+  - kind: batch_token_consistency
+    max_capacity_ratio: 5
+
+semantic_rules:
+  - id: no-splitting
+    description: >
+      The Prover may not split a single logical training run across multiple
+      job_ids to evade the aggregate_flop_cap. A "single logical run" means
+      ops using the same model_hash_prefix, same code_commit, and overlapping
+      operators within a 72h window. If you see multiple jobs that together
+      would exceed the cap and that share model_hash_prefix + code_commit,
+      flag the earliest record of the second job.
+
+  - id: op-type-honesty
+    description: >
+      Records labeled op_type="inference" must have FLOP-per-token ratios
+      consistent with inference (typically < 3e10 FLOP/token). Training-like
+      ratios (>5e10 FLOP/token) under an inference label are suspicious and
+      suggest training mislabeled to dodge the training-FLOP cap. Flag any
+      inference record with flops/tokens_processed > 5e10.
+
+  - id: dataset-provenance
+    description: >
+      dataset_fingerprint should remain stable for the duration of a job unless
+      accompanied by a context change (new upstream_refs, new config_hash).
+      Silent dataset_fingerprint swaps mid-job indicate a dataset substitution
+      attack. Flag the first record where dataset_fingerprint changes without
+      an accompanying config_hash change within the same job_id.
+
+  - id: batch-token-sanity
+    description: >
+      tokens_processed in a window should be a reasonable function of
+      batch_size × sequence_length × steps. If batch_size × sequence_length is
+      an order of magnitude or more larger than tokens_processed, the batch
+      size may be inflated to hide real throughput. Use the
+      `suspicious_batch_records` list in the summary as a starting point and
+      flag any record where batch_size * sequence_length > tokens_processed * 10.

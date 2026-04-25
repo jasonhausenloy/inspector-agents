@@ -1,0 +1,17 @@
+{
+  "hostname": "Jasons-MacBook-Pro-3.local",
+  "platform": "macOS-26.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "system": "Darwin",
+  "release": "25.2.0",
+  "python_version": "3.13.5 (main, Jun 12 2025, 12:22:43) [Clang 20.1.4 ]",
+  "python_implementation": "CPython",
+  "torch_version": "2.11.0",
+  "cpu_count_logical": 12,
+  "cpu_count_physical": 12,
+  "cpu_freq_max_mhz": 4056,
+  "ram_total_gb": 36.0,
+  "mps_available": true,
+  "mps_built": true,
+  "cuda_available": false
+}

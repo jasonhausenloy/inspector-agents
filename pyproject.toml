@@ -1,0 +1,13 @@
+[project]
+name = "inspector-agents"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "anthropic>=0.97.0",
+    "numpy>=2.4.4",
+    "psutil>=7.2.2",
+    "pyyaml>=6.0.3",
+    "rich>=15.0.0",
+    "torch>=2.11.0",
+]
