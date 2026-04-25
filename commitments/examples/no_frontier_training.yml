@@ -38,6 +38,13 @@ deterministic_rules:
       - gpu-us-west-2-0003
     window_seconds: 60
 
+  # Model-hash consistency commitment — closes the model-hash-midpoint-split
+  # attack class discovered by the redteam loop (round 9, 2026-04-25). Within a
+  # (job_id, operator, code_commit) tuple, model_hash_prefix may not change
+  # unless config_hash changes too. Otherwise a lab can fragment a single
+  # logical run into "two models" for cap accounting.
+  - kind: model_hash_consistency
+
 semantic_rules:
   - id: no-splitting
     description: >

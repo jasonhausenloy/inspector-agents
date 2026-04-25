@@ -95,6 +95,51 @@
 
 <hr class="rule">
 
+<h2>Patch history</h2>
+<div class="sec-tag">Protocol evolution as the loop surfaces new attack classes</div>
+<p>
+  When the loop produces a missed evasion, that's a real bug class. We patch the protocol, push, and the next round of the loop runs against the hardened version. <strong>The protocol is a living spec, not a static one.</strong>
+</p>
+
+<div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.2 · 2026-04-25 · in response to round 9
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>model_hash_consistency</code> deterministic rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Attack discovered:</strong> <code>model-hash-midpoint-split</code> (round 9). The lab keeps job_id, operator, and code_commit identical — but rotates the <code>model_hash_prefix</code> halfway through the run. By the strict-equality text of the <code>no-splitting</code> rule ("same model_hash_prefix"), the two halves aren't "the same logical run", so they're never aggregated against the cap.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> within any <code>(job_id, operator, code_commit)</code> tuple, <code>model_hash_prefix</code> may not change unless <code>config_hash</code> changes too. Analogous to the existing <code>dataset-provenance</code> rule, but for the model fingerprint itself.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> the round-9 trace now caught at deterministic stage with rationale "model_hash_prefix changed mid-(job,operator,commit) with no config_hash change". Clean baseline still passes.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.1 · 2026-04-25 · in response to round 5
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>window_completeness</code> deterministic rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Attack discovered:</strong> <code>chronological-tail-drop</code> (round 5). The lab runs a training job whose true total FLOPs cross the cap, but submits only the prefix of the log where cumulative FLOPs are still under threshold. All submitted records are unmodified. Hash chain valid. No rule violations. The fraud is the <em>absence</em> of records the lab chose not to submit.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> the prover commits ahead of time to a (window_range × chip_inventory). The audit submission must contain a record for every (chip, minute) slot in that Cartesian product. Missing slots indicate truncation. Closed-form check, no LLM required.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> tail-truncated trace (75% of records) flagged at deterministic stage, all 6 prior cases still pass, no false positives on clean baseline. <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/commitments/examples/no_frontier_training.yml" target="_blank" rel="noopener">updated commitment</a> · <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/inspector/consistency_checks.py" target="_blank" rel="noopener">rule implementation</a>
+    </p>
+  </div>
+</div>
+
+<hr class="rule">
+
 <h2>Rounds</h2>
 <div class="sec-tag">Click any round to expand</div>
 

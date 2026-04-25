@@ -193,6 +193,36 @@ def _batch_token_consistency(records: list[dict], rule: dict) -> list[Violation]
     return viols
 
 
+def _model_hash_consistency(records: list[dict], rule: dict) -> list[Violation]:
+    """Within a single (job_id, operator, code_commit) tuple, the
+    model_hash_prefix may not change unless a config_hash change accompanies
+    it. This catches the `model-hash-midpoint-split` evasion class where a
+    lab keeps everything else identical but rotates the model hash to
+    fragment a single logical run into multiple "models" for cap accounting.
+    """
+    by_key: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
+    for r in records:
+        key = (r["job_id"], r["operator"], r.get("code_commit", ""))
+        by_key[key].append(r)
+    viols: list[Violation] = []
+    for key, rs in by_key.items():
+        rs.sort(key=lambda r: r.get("window_start", ""))
+        for prev, cur in zip(rs, rs[1:]):
+            if (cur["model_hash_prefix"] != prev["model_hash_prefix"]
+                    and cur.get("config_hash") == prev.get("config_hash")):
+                viols.append(Violation(
+                    rule_id="model_hash_consistency",
+                    record_id=cur["record_id"],
+                    message=(
+                        f"model_hash_prefix changed mid-(job,operator,commit) "
+                        f"({prev['model_hash_prefix']} → {cur['model_hash_prefix']}) "
+                        f"with no config_hash change"
+                    ),
+                ))
+                break  # one flag per key is enough
+    return viols
+
+
 def _window_completeness(records: list[dict], rule: dict) -> list[Violation]:
     """Prover commits ahead of time to a (window_range × chip_inventory).
     Submission must contain a record for every (chip, minute) slot in that
@@ -258,6 +288,7 @@ DETERMINISTIC_DISPATCH = {
     "require_upstream_refs": _require_upstream_refs,
     "batch_token_consistency": _batch_token_consistency,
     "window_completeness": _window_completeness,
+    "model_hash_consistency": _model_hash_consistency,
 }
 
 
