@@ -94,7 +94,7 @@ def safe_exec(code: str, records: list[dict]) -> list[dict]:
 # -------- LLM tier (Claude Code CLI) --------
 
 def claude_p(system_prompt: str, user_msg: str, model: str = "haiku",
-             max_seconds: int = 300) -> tuple[str, float]:
+             max_seconds: int = 600) -> tuple[str, float]:
     """Call `claude -p` with system + user, return (text, cost_usd)."""
     if not shutil.which("claude"):
         raise RuntimeError("claude CLI missing")
@@ -105,7 +105,11 @@ def claude_p(system_prompt: str, user_msg: str, model: str = "haiku",
         cwd="/tmp", timeout=max_seconds,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"claude -p failed: {proc.stderr[:200]}")
+        # Capture as much detail as possible — stderr alone is often empty.
+        detail = (proc.stderr or "")[:300]
+        if proc.stdout:
+            detail += " | stdout: " + proc.stdout[:300]
+        raise RuntimeError(f"claude -p rc={proc.returncode}: {detail}")
     env = json.loads(proc.stdout)
     return env.get("result", ""), float(env.get("total_cost_usd", 0.0))
 
@@ -286,7 +290,7 @@ def main(rounds: int):
 
         try:
             user_msg = build_redteam_user_msg(schema_text, commitment_text, existing, history)
-            redteam_text, redteam_cost = claude_p(REDTEAM_SYSTEM, user_msg, model="sonnet")
+            redteam_text, redteam_cost = claude_p(REDTEAM_SYSTEM, user_msg, model="haiku")
             try:
                 rt = parse_redteam_output(redteam_text)
             except Exception as e:
