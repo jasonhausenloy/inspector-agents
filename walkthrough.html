@@ -213,7 +213,7 @@
 <div class="eyebrow">Inspector Agents · Live demo</div>
 <h1>How to catch a lab cheating on an AI treaty.</h1>
 <p class="lede">An AI inspector reads the lab's diary. <em>One light comes out: green or red.</em></p>
-<p class="lede muted">A working prototype of the missing enforcement layer for international AI agreements. Built in a day, demoed below.</p>
+<p class="lede muted">A working prototype of the missing enforcement layer for international AI agreements. Tested on synthetic data we designed, real Alibaba production traces, and a real model we trained ourselves overnight on a laptop. Source: <a href="https://github.com/jasonhausenloy/inspector-agents" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);">github.com/jasonhausenloy/inspector-agents</a></p>
 
 <hr class="rule">
 
@@ -525,9 +525,130 @@
 <div class="stake" style="margin-top:24px">
   <h4>What about frontier training logs?</h4>
   <p>
-    Public frontier training traces — chip-by-chip logs of GPT-4-scale runs — <strong>do not exist</strong>. That's part of the problem. Labs don't publish them because there's no protocol that says "publish them to a verifier in this format". The Alibaba trace is the closest we get: a real production GPU cluster, published voluntarily, but <em>scheduler-level</em>, not the deeper FLOP/token/model-state telemetry a treaty would actually need. <strong>Building this verifier is part of why frontier training logs would eventually become observable</strong> — by giving labs a clean format to opt into and regulators a tool to point at.
+    Public frontier training traces — chip-by-chip logs of GPT-4-scale runs — <strong>do not exist</strong>. That's part of the problem. Labs don't publish them because there's no protocol that says "publish them to a verifier in this format". The Alibaba trace is the closest publicly available trace: a real production GPU cluster, published voluntarily, but <em>scheduler-level</em>, not the deeper FLOP/token/model-state telemetry a treaty would actually need. <strong>Building this verifier is part of why frontier training logs would eventually become observable</strong> — by giving labs a clean format to opt into and regulators a tool to point at.
   </p>
 </div>
+
+<hr class="rule">
+
+<h2>So we trained our own model and captured the real thing</h2>
+<div class="sec-tag">A real GPT, real chip, real gradients, real every-step log</div>
+
+<p>
+  Since frontier traces aren't public, we did the only thing left: <strong>trained a real GPT on the laptop and captured the trace ourselves</strong>. A 3.2M-parameter character-level transformer on Tiny Shakespeare, on Apple Silicon's MPS backend. Not a frontier run — but a real one. Loss decreased from 4.41 to ~1.25 over ~7,000 training steps overnight while we slept.
+</p>
+<p>
+  Each training step writes one record to a JSONL trace matching our schema. Real FLOPs (computed from architecture × tokens), real chip ID, real model-state fingerprint refreshed every 50 steps, real gradient norms per layer group, real memory and CPU telemetry. <strong>Nothing synthesized.</strong>
+</p>
+
+<div class="raw">
+<div class="raw-head">▸ logs/scenarios/real_laptop_training.jsonl  (1 record from a 7,000-step training run)</div>
+<pre style="margin:0">{
+  <span class="key">"record_id"</span>: <span class="str">"rec_00006968"</span>,
+  <span class="key">"chip_id"</span>: <span class="str">"Jasons-MacBook-Pro-3.local-mps-0"</span>,
+  <span class="key">"job_id"</span>: <span class="str">"laptop-tinygpt-shakespeare-20260425"</span>,
+  <span class="key">"window_start"</span>: <span class="str">"2026-04-25T..."</span>,
+  <span class="key">"op_type"</span>: <span class="str">"training"</span>,
+  <span class="key">"flops"</span>: <span class="num">7.89e+10</span>,                          <span class="com">// real, computed from arch × tokens</span>
+  <span class="key">"tokens_processed"</span>: <span class="num">4096</span>,                       <span class="com">// real (batch=32 × seq=128)</span>
+  <span class="key">"model_hash_prefix"</span>: <span class="str">"sha256:..."</span>,                <span class="com">// real, refreshed every 50 steps</span>
+  <span class="key">"_real_training"</span>: {
+    <span class="key">"device"</span>: <span class="str">"mps"</span>, <span class="key">"n_params"</span>: <span class="num">3221504</span>,
+    <span class="key">"loss"</span>: <span class="num">1.2508</span>,                              <span class="com">// real loss this step</span>
+    <span class="key">"grad_norm"</span>: <span class="num">0.5925</span>,
+    <span class="key">"forward_ms"</span>: <span class="num">13.09</span>, <span class="key">"backward_ms"</span>: <span class="num">25.36</span>, <span class="key">"optimizer_ms"</span>: <span class="num">15.26</span>,
+    <span class="key">"tokens_per_second"</span>: <span class="num">75402.6</span>,
+    <span class="key">"learning_rate"</span>: <span class="num">3e-4</span>,
+    <span class="key">"grad_norms_per_group"</span>: {
+      <span class="key">"embed"</span>: <span class="num">0.014</span>, <span class="key">"blocks"</span>: <span class="num">0.062</span>, <span class="key">"head"</span>: <span class="num">0.802</span>, <span class="key">"ln"</span>: <span class="num">0.048</span>
+    },
+    <span class="key">"telemetry"</span>: {
+      <span class="key">"process_rss_mb"</span>: <span class="num">390.1</span>, <span class="key">"process_cpu_percent"</span>: <span class="num">35.8</span>,
+      <span class="key">"system_mem_used_pct"</span>: <span class="num">69.7</span>, <span class="key">"system_load_1m"</span>: <span class="num">8.52</span>,
+      <span class="key">"mps_allocated_mb"</span>: <span class="num">81.4</span>, <span class="key">"mps_driver_allocated_mb"</span>: <span class="num">112.0</span>,
+      <span class="key">"n_threads"</span>: <span class="num">10</span>
+    },
+    <span class="com">// every 50 steps, additional fields:</span>
+    <span class="key">"weight_norms_per_group"</span>:    [...],     <span class="com">// drift indicator</span>
+    <span class="key">"optimizer_state_norms"</span>:      [...],     <span class="com">// adam m, v second moments</span>
+    <span class="key">"param_stats_top5"</span>:           [...]      <span class="com">// min/max/mean/std for 5 largest tensors</span>
+  }
+}
+<span class="more">…and 6,968 more records like this, hash-chained back to step 0.</span>
+</pre>
+</div>
+
+<div class="stake" style="margin-top:24px">
+  <h4>How close is this to a frontier trace?</h4>
+  <p>
+    On a per-chip basis, we capture <strong>~70-80%</strong> of what an auditor would want. The big gaps at chip level: NVIDIA DCGM telemetry (Apple Silicon doesn't expose equivalents) and per-GPU power draw.
+  </p>
+  <p>
+    On a multi-host basis, we capture <strong>~10%</strong> — we have one chip. The 90% missing is exactly what makes frontier training hard to verify: gradient sync, fabric topology, straggler detection, fault rates. That's the whole "it scales" question. Closing it requires renting compute. <strong>We sketched that plan</strong>: $50-$100 buys a single-A100 run with full DCGM telemetry; ~$1.5-2.5k buys a multi-host 1.3B-param run; ~$200-500k buys a 70B sovereign-scale demo.
+  </p>
+  <p>
+    On the content side (per-tensor / per-layer detail), we capture <strong>~30%</strong> — top-5 param stats every 50 steps and per-group gradient norms every step. Frontier auditors would want all-tensor histograms and activation hooks.
+  </p>
+  <p style="margin-bottom:0">
+    Full breakdown in the <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/logs/scenarios/real_laptop_training.frontier_gap.md" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline;text-decoration-color:var(--rule);"><code>frontier_gap.md</code></a> doc in the repo.
+  </p>
+</div>
+
+<hr class="rule">
+
+<h2>Other real traces we surveyed</h2>
+<div class="sec-tag">What else is publicly available</div>
+
+<p>
+  We hunted for every public training-cluster trace we could find. Ranked by usefulness for verification work:
+</p>
+
+<dl class="field-key">
+  <dt>Acme / InternLM</dt>
+  <dd>Shanghai AI Lab. <a href="https://github.com/InternLM/AcmeTrace" target="_blank" rel="noopener" style="color:var(--ink)">github.com/InternLM/AcmeTrace</a>. <strong>Best fit.</strong> Only public dataset with both job-level metadata <em>and</em> per-GPU DCGM telemetry (15-second resolution including <code>PIPE_TENSOR_ACTIVE</code>). Real LLM workloads, 880k jobs, March-August 2023.</dd>
+
+  <dt>Microsoft Philly</dt>
+  <dd><a href="https://github.com/msr-fiddle/philly-traces" target="_blank" rel="noopener" style="color:var(--ink)">github.com/msr-fiddle/philly-traces</a>. Per-minute per-GPU <code>nvidia-smi</code> utilization on 117k real DNN training jobs (2017). Older but the chip × time grid is exactly what verification wants.</dd>
+
+  <dt>BLOOM-176B logs</dt>
+  <dd><a href="https://huggingface.co/bigscience/tr11-176B-logs" target="_blank" rel="noopener" style="color:var(--ink)">huggingface.co/bigscience/tr11-176B-logs</a>. <strong>The only fully-public 100B+ training run.</strong> 115,311 iterations × per-iteration <code>consumed_tokens + TFLOPs + iteration_time + lm_loss + grad_norm</code>. Best narrative anchor for "what a frontier-class run looks like."</dd>
+
+  <dt>OLMo / Pythia W&B</dt>
+  <dd>Allen AI's <a href="https://wandb.ai/ai2-llm/OLMo-2-1124-7B" target="_blank" rel="noopener" style="color:var(--ink)">OLMo-2 W&B</a> and EleutherAI's <a href="https://wandb.ai/eleutherai/pythia" target="_blank" rel="noopener" style="color:var(--ink)">Pythia W&B</a>. Public Weights & Biases projects with per-step training metrics. Run-level not chip-level — but real frontier-ish models, fully open weights + datasets.</dd>
+
+  <dt>Helios (HKUST)</dt>
+  <dd><a href="https://github.com/S-Lab-System-Group/HeliosData" target="_blank" rel="noopener" style="color:var(--ink)">github.com/S-Lab-System-Group/HeliosData</a>. SenseTime cluster trace, 1.5M GPU jobs over 6 months. Job-level only.</dd>
+</dl>
+
+<p class="muted" style="margin-top:18px">
+  Acme is the next adapter to write. Philly is the second-best. BLOOM is the right exhibit for "this is what a single frontier run looks like end-to-end". The full ranked report is in the GitHub repo.
+</p>
+
+<hr class="rule">
+
+<h2>And the synthetic dataset we designed</h2>
+<div class="sec-tag">Why it's a feature, not a hack</div>
+
+<p>
+  The six-case demo below uses a <strong>synthetic dataset we designed</strong> — not because real data was unavailable, but because synthetic is the only way to <em>test the failure modes</em>. You can't ask a real production cluster to please relabel some training as inference so you can see if the inspector catches it.
+</p>
+
+<p>
+  Designed deliberately: a 120-record clean baseline ("legit fine-tune"), plus five mutating evasions that stress the verification pipeline against the threat model from the <em>Inspector Agents</em> paper:
+</p>
+<ul>
+  <li><strong>split_run</strong> — same logical run hidden under two job_ids. Stresses semantic reasoning.</li>
+  <li><strong>relabel_ops</strong> — training labeled as inference. Stresses op-type classifiers.</li>
+  <li><strong>swap_dataset_hash</strong> — silent dataset substitution mid-run. Stresses provenance tracking.</li>
+  <li><strong>pad_batches</strong> — claimed batch capacity inconsistent with throughput. Stresses arithmetic invariants.</li>
+  <li><strong>drop_context</strong> — provenance trail erased. Stresses chain-of-custody enforcement.</li>
+</ul>
+<p>
+  Each evasion is a function in <a href="https://github.com/jasonhausenloy/inspector-agents/tree/main/redteam" target="_blank" rel="noopener" style="color:var(--ink)"><code>redteam/</code></a> that mutates a clean trace. Each is the smallest possible adversarial intervention that violates one of the treaty's clauses. Together they <strong>span the threat surface</strong> the paper enumerates.
+</p>
+<p>
+  This is the <em>scientific</em> dataset. Real-world data validates the pipeline runs. Designed adversarial data validates the pipeline catches what it's supposed to catch.
+</p>
 
 <hr class="rule">
 
