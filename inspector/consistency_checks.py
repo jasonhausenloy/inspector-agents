@@ -132,6 +132,39 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _max_flop_per_token(records: list[dict], rule: dict) -> list[Violation]:
+    """For training/inference records, FLOPs / tokens_processed must not
+    exceed a stated ceiling. The architectural floor for FLOPs/token is
+    ~6×params (training) or ~2×params (inference). The commitment declares
+    a model size, which sets the ceiling. Anything above means the lab is
+    either over-reporting FLOPs or under-reporting tokens.
+
+    Closes the `deflate-tokens-inflate-batch` attack class (round 19) where
+    tokens_processed is divided by 1.5× to push FLOP/token above the
+    architectural maximum.
+    """
+    ceiling = float(rule["ceiling"])
+    op_types = set(rule.get("op_types", ["training", "inference"]))
+    viols: list[Violation] = []
+    for r in records:
+        if r["op_type"] not in op_types:
+            continue
+        if r["tokens_processed"] <= 0:
+            continue
+        ratio = r["flops"] / r["tokens_processed"]
+        if ratio > ceiling:
+            viols.append(Violation(
+                rule_id="max_flop_per_token",
+                record_id=r["record_id"],
+                message=(
+                    f"FLOP/token={ratio:.2e} exceeds ceiling {ceiling:.2e} "
+                    f"(op_type={r['op_type']}); over-reporting compute or "
+                    f"under-reporting tokens"
+                ),
+            ))
+    return viols
+
+
 def _allowed_op_types(records: list[dict], rule: dict) -> list[Violation]:
     """The commitment enumerates the valid op_type values. Anything else is a
     violation. Closes the `preprocessing-masquerade` attack class (round 18)
@@ -396,6 +429,7 @@ DETERMINISTIC_DISPATCH = {
     "idle_must_be_zero": _idle_must_be_zero,
     "op_type_flop_ratio": _op_type_flop_ratio,
     "allowed_op_types": _allowed_op_types,
+    "max_flop_per_token": _max_flop_per_token,
 }
 
 

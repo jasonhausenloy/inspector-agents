@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.6 · 2026-04-26 · in response to round 19
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>max_flop_per_token</code> architectural ceiling
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>deflate-tokens-inflate-batch</code> (round 19). Keep FLOPs and op_type=training, inflate batch_size 1.5× and divide tokens_processed by 1.5×. FLOP/token rises from 6×10¹⁰ to 9×10¹⁰. <code>op_type_flop_ratio</code> only checks non-training labels; the training-FLOP cap aggregates FLOPs not tokens; <code>batch_token_consistency</code> at 5× tolerates the inflated batch.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> for a model with known parameter count N, training FLOPs/token has an architectural ceiling near 6N. The commitment now declares an explicit ceiling (8×10¹⁰ for our synthetic 3.2M-param model). Records above this are either over-reporting compute or under-reporting tokens.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>FLOP/token=8.88×10¹⁰ exceeds ceiling 8×10¹⁰ — over-reporting compute or under-reporting tokens</em>". All 6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.5 · 2026-04-26 · in response to round 18
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

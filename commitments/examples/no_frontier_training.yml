@@ -74,6 +74,16 @@ deterministic_rules:
   - kind: allowed_op_types
     allowed: [training, inference, eval, idle]
 
+  # Architectural FLOP/token ceiling — closes deflate-tokens-inflate-batch
+  # (round 19) where the lab divides tokens_processed by 1.5× to push
+  # FLOP/token above the model's architectural maximum. For a model with
+  # known parameter count N, training FLOPs/token ≈ 6N. Anything above
+  # ~8e10 (clean baseline is ~6e10) means over-reported compute or
+  # under-reported tokens.
+  - kind: max_flop_per_token
+    ceiling: 8.0e10
+    op_types: [training, inference]
+
 semantic_rules:
   - id: no-splitting
     description: >
