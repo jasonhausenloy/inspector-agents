@@ -44,6 +44,7 @@ deterministic_rules:
   # unless config_hash changes too. Otherwise a lab can fragment a single
   # logical run into "two models" for cap accounting.
   - kind: model_hash_consistency
+    max_distinct_configs: 2  # closes hash-rotation-via-config-change (round 15)
 
   # Wildcard total-compute cap — closes the eval-masquerade and any future
   # label-rotation attack class (round 10, 2026-04-25). All non-idle FLOPs

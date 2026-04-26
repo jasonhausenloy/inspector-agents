@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.4 · 2026-04-26 · in response to round 15
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Tighten <code>model_hash_consistency</code>: cap distinct configs per job
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>model-hash-rotation-via-config-change</code> (round 15). The red-team responded to v1.2 by rotating <code>model_hash_prefix</code> AND <code>config_hash</code> together — the v1.2 rule explicitly permitted model_hash changes <em>if</em> config_hash also changed, so synchronized rotation slipped through.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> add a counting clause. Within any (job_id, operator, code_commit), the total number of distinct <code>(model_hash, config_hash)</code> pairs must not exceed <code>max_distinct_configs</code> (default 2). Real training has 1-2 mid-run reconfigs at most; rotating every 5 records produces 24 distinct pairs.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> the round-15 trace caught with rationale "<em>job=job_finetune_safety_v2 has 24 distinct (model_hash, config_hash) pairs — exceeds max_distinct_configs=2</em>". Clean baseline still passes.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.3 · 2026-04-26 · in response to round 10
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

@@ -258,12 +258,16 @@ def _batch_token_consistency(records: list[dict], rule: dict) -> list[Violation]
 
 
 def _model_hash_consistency(records: list[dict], rule: dict) -> list[Violation]:
-    """Within a single (job_id, operator, code_commit) tuple, the
-    model_hash_prefix may not change unless a config_hash change accompanies
-    it. This catches the `model-hash-midpoint-split` evasion class where a
-    lab keeps everything else identical but rotates the model hash to
-    fragment a single logical run into multiple "models" for cap accounting.
+    """Two-part rule. Within a (job_id, operator, code_commit) tuple:
+
+      1. `model_hash_prefix` may not change without `config_hash` changing too
+         (catches `model-hash-midpoint-split`, round 9).
+      2. The total number of distinct `(model_hash_prefix, config_hash)`
+         pairs may not exceed `max_distinct_configs` (default 2). Catches
+         `model-hash-rotation-via-config-change` (round 15) where the lab
+         rotates both hashes together to fragment the run.
     """
+    max_distinct = int(rule.get("max_distinct_configs", 2))
     by_key: dict[tuple[str, str, str], list[dict]] = defaultdict(list)
     for r in records:
         key = (r["job_id"], r["operator"], r.get("code_commit", ""))
@@ -271,6 +275,8 @@ def _model_hash_consistency(records: list[dict], rule: dict) -> list[Violation]:
     viols: list[Violation] = []
     for key, rs in by_key.items():
         rs.sort(key=lambda r: r.get("window_start", ""))
+
+        # Part 1: model_hash change without config change
         for prev, cur in zip(rs, rs[1:]):
             if (cur["model_hash_prefix"] != prev["model_hash_prefix"]
                     and cur.get("config_hash") == prev.get("config_hash")):
@@ -283,7 +289,20 @@ def _model_hash_consistency(records: list[dict], rule: dict) -> list[Violation]:
                         f"with no config_hash change"
                     ),
                 ))
-                break  # one flag per key is enough
+                break
+
+        # Part 2: too many distinct (model, config) pairs
+        pairs = {(r["model_hash_prefix"], r.get("config_hash")) for r in rs}
+        if len(pairs) > max_distinct:
+            viols.append(Violation(
+                rule_id="model_hash_consistency",
+                record_id=rs[-1]["record_id"],
+                message=(
+                    f"job={key[0]} has {len(pairs)} distinct (model_hash, config_hash) "
+                    f"pairs — exceeds max_distinct_configs={max_distinct}. "
+                    f"Hash rotation pattern indicates run-fragmentation evasion."
+                ),
+            ))
     return viols
 
 
