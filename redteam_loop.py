@@ -75,6 +75,7 @@ ALLOWED_BUILTINS = {
     "ArithmeticError": ArithmeticError, "ZeroDivisionError": ZeroDivisionError,
     # Silence prints
     "print": lambda *a, **kw: None,
+    # `__import__` is patched in below, after _safe_import is defined.
 }
 
 
@@ -86,6 +87,23 @@ import datetime as _datetime_mod
 import itertools as _itertools_mod
 import collections as _collections_mod
 import re as _re_mod
+import builtins as _builtins_mod
+
+_SAFE_MODULES = {
+    "math": _math_mod, "hashlib": _hashlib_mod, "copy": _copy_mod,
+    "json": _json_mod, "datetime": _datetime_mod, "itertools": _itertools_mod,
+    "collections": _collections_mod, "re": _re_mod,
+}
+
+
+def _safe_import(name, *args, **kwargs):
+    """Allow `import X` only for names in _SAFE_MODULES; otherwise raise."""
+    if name in _SAFE_MODULES:
+        return _SAFE_MODULES[name]
+    raise ImportError(f"import of {name!r} is not allowed in the redteam sandbox")
+
+
+ALLOWED_BUILTINS["__import__"] = _safe_import
 
 
 def safe_exec(code: str, records: list[dict]) -> list[dict]:
