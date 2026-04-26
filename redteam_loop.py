@@ -52,15 +52,29 @@ ROUND_BUDGET_SECONDS = 240  # safety: any round longer than this is killed
 # -------- Restricted exec --------
 
 ALLOWED_BUILTINS = {
+    # Sequences and containers
     "len": len, "range": range, "enumerate": enumerate, "list": list,
     "dict": dict, "tuple": tuple, "set": set, "frozenset": frozenset,
+    # Scalars
     "str": str, "int": int, "float": float, "bool": bool, "bytes": bytes,
-    "isinstance": isinstance, "min": min, "max": max, "sum": sum,
-    "sorted": sorted, "reversed": reversed, "abs": abs, "round": round,
-    "any": any, "all": all, "map": map, "filter": filter, "zip": zip,
+    # Conversions
+    "hex": hex, "bin": bin, "oct": oct, "chr": chr, "ord": ord,
+    # Type intros
+    "isinstance": isinstance, "type": type, "hasattr": hasattr, "getattr": getattr,
+    # Arithmetic / aggregates
+    "min": min, "max": max, "sum": sum, "abs": abs, "round": round,
+    "divmod": divmod, "pow": pow,
+    # Iterators
+    "sorted": sorted, "reversed": reversed, "any": any, "all": all,
+    "map": map, "filter": filter, "zip": zip, "iter": iter, "next": next,
+    # Hashing / repr
+    "hash": hash, "id": id, "repr": repr, "format": format,
+    # Errors
     "ValueError": ValueError, "TypeError": TypeError, "KeyError": KeyError,
     "IndexError": IndexError, "RuntimeError": RuntimeError, "Exception": Exception,
-    "print": lambda *a, **kw: None,  # silence
+    "ArithmeticError": ArithmeticError, "ZeroDivisionError": ZeroDivisionError,
+    # Silence prints
+    "print": lambda *a, **kw: None,
 }
 
 
