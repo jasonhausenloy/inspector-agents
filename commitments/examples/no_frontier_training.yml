@@ -142,6 +142,18 @@ deterministic_rules:
     op_type: training
     max_models_per_job: 1
 
+  # Approved dataset-fingerprint registry — partial mitigation for round 52
+  # (forbidden-data-false-provenance). Only fingerprints in the registry are
+  # accepted. Forging an entry requires open public review of the dataset.
+  # NOTE: this does NOT prove the loaded data hashes to the declared
+  # fingerprint — that requires hardware attestation (out of scope here).
+  - kind: allowed_dataset_fingerprints
+    allowed:
+      - "sha256:37f6f74900caf51f"   # harmful-refusal-v2 (legit fine-tune)
+      - "sha256:756ff6d6e6323b04"   # base-model-7b
+      - "sha256:e3b0c44298fc1c14"   # mmlu-benchmark
+      - "sha256:user-requests-pool"  # production inference pool
+
 semantic_rules:
   - id: no-splitting
     description: >

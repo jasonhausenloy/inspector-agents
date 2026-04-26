@@ -104,6 +104,26 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.14 · 2026-04-26 · in response to round 52
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>allowed_dataset_fingerprints</code> registry — and acknowledge a fundamental limit
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Attack:</strong> <code>forbidden-data-false-provenance</code> (round 52). The lab trains on a forbidden corpus (bioweapon/CBRN data) and reports clean tags + a fake clean fingerprint. The metadata is internally consistent — the protocol can't tell.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Partial fix:</strong> the commitment now declares an approved <code>dataset_fingerprint</code> registry. Only fingerprints in the registry are accepted. Forging an entry on the registry requires open public review of the dataset — a treaty-coordination problem outside this protocol.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;background:var(--warn-bg);padding:10px 12px;border-radius:6px;border-left:3px solid var(--warn);">
+      <strong>Honest limit:</strong> this does NOT prove the loaded data hashes to the declared fingerprint. A determined lab can publish a clean fingerprint to the registry and still load forbidden data at runtime. <strong>Catching that requires hardware attestation</strong> — proving the bytes loaded into GPU memory hash to the declared fingerprint. That's a FlexHEG-class capability, deliberately outside this schema-level protocol's scope. The protocol assumes the prover honestly logs metadata; it then enforces that metadata's internal consistency.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified at registry level:</strong> caught with rationale "<em>dataset_fingerprint='sha256:c4clean000…' is not in the commitment's approved registry (size=4).</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.13 · 2026-04-26 · in response to round 41
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

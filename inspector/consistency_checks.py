@@ -132,6 +132,41 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _allowed_dataset_fingerprints(records: list[dict], rule: dict) -> list[Violation]:
+    """The commitment lists a registry of approved `dataset_fingerprint`
+    values. Records using a fingerprint outside the registry are violations.
+
+    Closes round 52 (`forbidden-data-false-provenance`) at the registry level:
+    the lab cannot use a forbidden corpus and report a clean fingerprint,
+    because the clean fingerprint must already be in the public registry.
+    Forging an entry on the registry requires open public review — a
+    treaty-coordination problem outside the technical protocol.
+
+    NOTE: this only forces the lab to LIE in a registry-visible way (publish
+    a fingerprint that doesn't correspond to the data actually loaded).
+    Detecting that requires hardware attestation that the loaded data hashes
+    to the declared fingerprint. Out of scope for schema-level verification.
+    """
+    allowed = set(rule.get("allowed", []))
+    if not allowed:
+        return []
+    viols: list[Violation] = []
+    for r in records:
+        if r["op_type"] == "idle":
+            continue
+        fp = r.get("dataset_fingerprint")
+        if fp not in allowed:
+            viols.append(Violation(
+                rule_id="allowed_dataset_fingerprints",
+                record_id=r["record_id"],
+                message=(
+                    f"dataset_fingerprint={fp!r} is not in the commitment's "
+                    f"approved registry (size={len(allowed)})"
+                ),
+            ))
+    return viols
+
+
 def _model_uniqueness_per_job(records: list[dict], rule: dict) -> list[Violation]:
     """Within a single job_id, only one `model_hash_prefix` is allowed.
     Closes round 41 (`sequential-model-specialization-via-config-rotation`)
@@ -662,6 +697,7 @@ DETERMINISTIC_DISPATCH = {
     "training_unique_per_model": _training_unique_per_model,
     "audit_window_uniqueness": _audit_window_uniqueness,
     "model_uniqueness_per_job": _model_uniqueness_per_job,
+    "allowed_dataset_fingerprints": _allowed_dataset_fingerprints,
 }
 
 
