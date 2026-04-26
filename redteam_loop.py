@@ -372,7 +372,7 @@ def main(rounds: int):
 
         try:
             user_msg = build_redteam_user_msg(schema_text, commitment_text, existing, history)
-            redteam_text, redteam_cost = claude_p(REDTEAM_SYSTEM, user_msg, model="sonnet")
+            redteam_text, redteam_cost = claude_p(REDTEAM_SYSTEM, user_msg, model="haiku")
             try:
                 rt = parse_redteam_output(redteam_text)
             except Exception as e:
