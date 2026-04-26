@@ -102,6 +102,10 @@ def safe_exec(code: str, records: list[dict]) -> list[dict]:
         "hashlib": _hashlib_mod,
         "copy": _copy_mod,
         "json": _json_mod,
+        # Safe no-ops for things the red-team sometimes tries to call.
+        # The harness re-chains automatically after mutate returns; a manual
+        # call from inside mutate is harmless (and we just no-op it).
+        "rechain": lambda recs: recs,
     }
 
     def _alarm(_sig, _frame):
