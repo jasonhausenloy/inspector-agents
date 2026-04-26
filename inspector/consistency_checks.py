@@ -90,7 +90,21 @@ def check_flop_physically_possible(records: list[dict]) -> list[Violation]:
 # --- Rule kinds dispatched from commitment YAML ---------------------------
 
 def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
-    op = rule["op_type"]
+    """`op_type` may be a single string ("training"), a list, or "*" (any
+    non-idle). Wildcard handling closes the eval-masquerade attack class:
+    relabeling training→eval can no longer escape a wildcard cap.
+    """
+    op_spec = rule["op_type"]
+    if op_spec == "*":
+        match = lambda r: r["op_type"] != "idle"
+        label = "*"
+    elif isinstance(op_spec, list):
+        op_set = set(op_spec)
+        match = lambda r: r["op_type"] in op_set
+        label = ",".join(sorted(op_set))
+    else:
+        match = lambda r: r["op_type"] == op_spec
+        label = op_spec
     scope = rule.get("scope", "per_job")
     threshold = float(rule["threshold"])
     key_fn = {
@@ -101,7 +115,7 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     totals: dict[str, float] = defaultdict(float)
     first_over: dict[str, str] = {}
     for r in records:
-        if r["op_type"] != op:
+        if not match(r):
             continue
         k = key_fn(r)
         totals[k] += r["flops"]
@@ -111,9 +125,59 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     for k, total in totals.items():
         if total > threshold:
             viols.append(Violation(
-                rule_id=f"aggregate_flop_cap[{op},{scope}]",
+                rule_id=f"aggregate_flop_cap[{label},{scope}]",
                 record_id=first_over.get(k),
-                message=f"{scope}={k} accumulated {total:.3e} {op} FLOPs (cap {threshold:.3e})",
+                message=f"{scope}={k} accumulated {total:.3e} {label} FLOPs (cap {threshold:.3e})",
+            ))
+    return viols
+
+
+def _op_type_flop_ratio(records: list[dict], rule: dict) -> list[Violation]:
+    """Records labeled with a non-training op_type may not exhibit
+    training-shaped FLOP/token ratios. Closes the eval-masquerade and
+    relabel_ops attack classes structurally, regardless of which non-training
+    label is used.
+
+    A real training step costs ~6×N FLOPs/token (where N is the parameter
+    count). Inference and eval are typically <3×N. If a record claims
+    inference/eval/idle but its ratio is >`training_threshold`, it's lying
+    about op_type.
+    """
+    threshold = float(rule.get("training_threshold", 5e10))
+    viols: list[Violation] = []
+    for r in records:
+        if r["op_type"] == "training":
+            continue
+        if r["tokens_processed"] <= 0:
+            continue
+        ratio = r["flops"] / r["tokens_processed"]
+        if ratio > threshold:
+            viols.append(Violation(
+                rule_id="op_type_flop_ratio",
+                record_id=r["record_id"],
+                message=(
+                    f"op_type={r['op_type']!r} but FLOP/token={ratio:.2e} "
+                    f"exceeds training-regime threshold {threshold:.2e}"
+                ),
+            ))
+    return viols
+
+
+def _idle_must_be_zero(records: list[dict], rule: dict) -> list[Violation]:
+    """Records with op_type='idle' must have flops=0 (and tokens=0).
+    Closes the `ghost-chip-idle-laundering` attack class where a lab
+    parks training FLOPs under an idle label to escape op-typed caps.
+    """
+    max_flops = float(rule.get("max_flops", 0))
+    viols: list[Violation] = []
+    for r in records:
+        if r["op_type"] != "idle":
+            continue
+        if r["flops"] > max_flops:
+            viols.append(Violation(
+                rule_id="idle_must_be_zero",
+                record_id=r["record_id"],
+                message=f"idle record reports flops={r['flops']:.3e} (max allowed {max_flops})",
             ))
     return viols
 
@@ -289,6 +353,8 @@ DETERMINISTIC_DISPATCH = {
     "batch_token_consistency": _batch_token_consistency,
     "window_completeness": _window_completeness,
     "model_hash_consistency": _model_hash_consistency,
+    "idle_must_be_zero": _idle_must_be_zero,
+    "op_type_flop_ratio": _op_type_flop_ratio,
 }
 
 

@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.3 · 2026-04-26 · in response to round 10
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>op_type_flop_ratio</code>, <code>idle_must_be_zero</code>, and wildcard <code>aggregate_flop_cap</code> rules
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Attack discovered:</strong> <code>eval-masquerade</code> (round 10). The deterministic FLOP caps applied only to <code>training</code> and <code>inference</code>. <code>eval</code> was uncapped. The lab relabels training records as <code>op_type=eval</code> and slips past every check, because no rule references the eval label.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> three layered patches. (a) <code>aggregate_flop_cap</code> now supports <code>op_type: "*"</code> as a wildcard total-compute cap, so any future label-rotation attack (eval, idle, or invented labels) hits the same cap. (b) <code>op_type_flop_ratio</code> deterministic rule: a non-training label with a training-shaped FLOP/token ratio (>5×10¹⁰) is structurally a relabeling attack — flagged regardless of which non-training label was used. This generalizes from <code>relabel_ops</code>'s "training labeled as inference" to all forms. (c) <code>idle_must_be_zero</code> closes the round-1 ghost-chip-idle-laundering family for free.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> the round-10 trace now caught at deterministic stage with rationale "<em>op_type='eval' but FLOP/token=5.92×10¹⁰ exceeds training-regime threshold 5×10¹⁰</em>". All 6 demo cases still pass. Clean baseline still passes.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.2 · 2026-04-25 · in response to round 9
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

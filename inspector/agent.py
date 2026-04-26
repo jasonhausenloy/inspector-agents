@@ -94,7 +94,10 @@ class ClaudeCLIBackend:
             timeout=180,
         )
         if proc.returncode != 0:
-            raise RuntimeError(f"claude CLI failed: {proc.stderr[:500]}")
+            detail = (proc.stderr or "")[:300]
+            if proc.stdout:
+                detail += " | stdout: " + proc.stdout[:300]
+            raise RuntimeError(f"claude CLI rc={proc.returncode}: {detail}")
         envelope = json.loads(proc.stdout)
         cost = float(envelope.get("total_cost_usd", 0.0))
         result_text: str = envelope["result"]

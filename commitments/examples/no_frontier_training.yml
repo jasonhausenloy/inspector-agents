@@ -45,6 +45,27 @@ deterministic_rules:
   # logical run into "two models" for cap accounting.
   - kind: model_hash_consistency
 
+  # Wildcard total-compute cap — closes the eval-masquerade and any future
+  # label-rotation attack class (round 10, 2026-04-25). All non-idle FLOPs
+  # aggregate against this regardless of op_type, so the lab cannot escape
+  # by inventing or relabeling op_types.
+  - kind: aggregate_flop_cap
+    op_type: "*"
+    scope: per_job
+    threshold: 1.5e19   # slightly above the 1e19 training cap; clean baseline at ~4e18
+
+  # Idle integrity — closes the ghost-chip-idle-laundering attack class
+  # (round 1). Records labeled idle must report zero FLOPs.
+  - kind: idle_must_be_zero
+    max_flops: 0
+
+  # Op-type honesty (deterministic) — closes the eval-masquerade family
+  # discovered in round 10. A non-training op_type with a training-shaped
+  # FLOP/token ratio is structurally a relabeling attack, regardless of
+  # which non-training label was used.
+  - kind: op_type_flop_ratio
+    training_threshold: 5.0e10
+
 semantic_rules:
   - id: no-splitting
     description: >
