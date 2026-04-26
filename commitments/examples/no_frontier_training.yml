@@ -148,6 +148,12 @@ deterministic_rules:
   - kind: operator_uniqueness_per_job
     max_operators_per_job: 1
 
+  # Upstream-refs DAG validity — closes rounds 60 (phantom refs to non-
+  # existent records) and 61 (circular causality A→B→A). The provenance
+  # graph must be a valid DAG with all referenced records present and
+  # chronologically ordered.
+  - kind: upstream_refs_dag_validity
+
   # Approved dataset-fingerprint registry — partial mitigation for round 52
   # (forbidden-data-false-provenance). Only fingerprints in the registry are
   # accepted. Forging an entry requires open public review of the dataset.

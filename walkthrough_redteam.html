@@ -121,6 +121,7 @@
     <tr><td style="padding:6px 4px;">v1.13</td><td>41</td><td>sequential-model-specialization</td><td>model_uniqueness_per_job</td></tr>
     <tr><td style="padding:6px 4px;">v1.14</td><td>52</td><td>forbidden-data-false-provenance</td><td>allowed_dataset_fingerprints (partial — see acknowledged limit)</td></tr>
     <tr><td style="padding:6px 4px;">v1.15</td><td>57</td><td>operator-rotation-within-job</td><td>operator_uniqueness_per_job</td></tr>
+    <tr><td style="padding:6px 4px;">v1.16</td><td>60+61</td><td>upstream-refs-phantom + circular-causality</td><td>upstream_refs_dag_validity</td></tr>
     </tbody>
     </table>
   </div>
@@ -160,6 +161,23 @@
 </p>
 
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.16 · 2026-04-26 · in response to rounds 60 + 61
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>upstream_refs_dag_validity</code> rule (closes 2 attacks at once)
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Two attacks, same defense:</strong> <code>upstream-refs-phantom-records</code> (round 60) and <code>circular-upstream-causality-paradox</code> (round 61). The red-team gamed the provenance graph — pointing <code>upstream_refs</code> to records that don't exist (phantom), or to later records (cycles, future-pointing). The protocol's structural model of computation is a DAG; breaking that DAG is itself a violation.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> three checks fold into one rule. (a) every upstream_ref must exist in the trace; (b) refs must precede their referrer chronologically (no cycles, no future-pointing); (c) the resulting graph is a valid DAG.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> round 60 caught with "<em>upstream_ref 'rec_phantom_…' does not exist</em>"; round 61 caught with "<em>upstream_ref 'rec_60' has ordinal 60 ≥ this record's ordinal 0 — cycle or future-pointing reference.</em>"
+    </p>
+  </div>
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.15 · 2026-04-26 · in response to round 57

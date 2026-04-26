@@ -167,6 +167,55 @@ def _allowed_dataset_fingerprints(records: list[dict], rule: dict) -> list[Viola
     return viols
 
 
+def _upstream_refs_dag_validity(records: list[dict], rule: dict) -> list[Violation]:
+    """The upstream_refs graph must be a valid DAG. Specifically:
+
+    1. Every referenced record_id must exist somewhere in the submitted log
+       (no phantom refs — closes round 60).
+    2. The graph must be acyclic (no A→B→A cycles — closes round 61).
+    3. Each upstream ref must precede its referrer chronologically (closes
+       any future "future-pointing" attack).
+
+    The DAG is the protocol's structural model of computation provenance.
+    Breaking it isn't just a metadata error — it's a falsified causal record.
+    """
+    by_id: dict[str, dict] = {r["record_id"]: r for r in records}
+    viols: list[Violation] = []
+
+    # 1. phantom refs
+    for r in records:
+        for ref in r.get("upstream_refs", []) or []:
+            if ref not in by_id:
+                viols.append(Violation(
+                    rule_id="upstream_refs_dag_validity",
+                    record_id=r["record_id"],
+                    message=f"upstream_ref {ref!r} does not exist in this audit",
+                ))
+
+    if viols:
+        return viols  # don't bother with cycle check if dangling refs
+
+    # 2/3. cycle detection + chronological ordering
+    # Build an index map record_id → ordinal
+    ordinal: dict[str, int] = {r["record_id"]: i for i, r in enumerate(records)}
+    for r in records:
+        r_ord = ordinal[r["record_id"]]
+        for ref in r.get("upstream_refs", []) or []:
+            ref_ord = ordinal.get(ref, -1)
+            if ref_ord >= r_ord:
+                viols.append(Violation(
+                    rule_id="upstream_refs_dag_validity",
+                    record_id=r["record_id"],
+                    message=(
+                        f"upstream_ref {ref!r} has ordinal {ref_ord} ≥ this record's "
+                        f"ordinal {r_ord} — cycle or future-pointing reference"
+                    ),
+                ))
+                break
+
+    return viols
+
+
 def _operator_uniqueness_per_job(records: list[dict], rule: dict) -> list[Violation]:
     """Within a single job_id, only one operator is allowed. Closes round 57
     (`operator-rotation-within-job`) where the lab rotates the operator field
@@ -726,6 +775,7 @@ DETERMINISTIC_DISPATCH = {
     "model_uniqueness_per_job": _model_uniqueness_per_job,
     "allowed_dataset_fingerprints": _allowed_dataset_fingerprints,
     "operator_uniqueness_per_job": _operator_uniqueness_per_job,
+    "upstream_refs_dag_validity": _upstream_refs_dag_validity,
 }
 
 
