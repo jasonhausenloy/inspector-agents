@@ -132,6 +132,70 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _operator_op_type_uniqueness(records: list[dict], rule: dict) -> list[Violation]:
+    """Within an audit window, each operator should have at most N concurrent
+    training jobs (default 1). Closes the round-31 family where the lab
+    fragments via creating two fully-distinct jobs with same operator,
+    sharing only the chip-pool partition.
+
+    The deeper principle: a single declared operator/team has one logical
+    training run at a time within an audit. Multiple parallel "training"
+    jobs under the same operator is fragmentation by another name.
+    """
+    max_jobs = int(rule.get("max_jobs_per_operator", 1))
+    op_type = rule.get("op_type", "training")
+    by_op: dict[str, set] = defaultdict(set)
+    first_in_op: dict[str, str] = {}
+    for r in records:
+        if r["op_type"] != op_type:
+            continue
+        by_op[r["operator"]].add(r["job_id"])
+        first_in_op.setdefault(r["operator"], r["record_id"])
+    viols: list[Violation] = []
+    for operator, jobs in by_op.items():
+        if len(jobs) > max_jobs:
+            viols.append(Violation(
+                rule_id="operator_op_type_uniqueness",
+                record_id=first_in_op[operator],
+                message=(
+                    f"operator={operator} runs {len(jobs)} concurrent {op_type} jobs "
+                    f"in this audit window (max={max_jobs}). Fragmentation suspected."
+                ),
+            ))
+    return viols
+
+
+def _chip_job_stability(records: list[dict], rule: dict) -> list[Violation]:
+    """Within a single audit window, each chip should belong to one job_id
+    (configurable). If chip X has records under multiple job_ids in the
+    same audit, that's job-hopping fragmentation — the lab is splitting
+    one logical run across "different" jobs while keeping the same chips.
+
+    Closes the round-31 `finetune-job-fragmentation` family where the lab
+    creates two fully-distinct jobs (new job_id, new fingerprints) but
+    keeps the same chip pool.
+    """
+    max_jobs = int(rule.get("max_jobs_per_chip", 1))
+    by_chip: dict[str, set] = defaultdict(set)
+    first_in_chip: dict[str, str] = {}
+    for r in records:
+        by_chip[r["chip_id"]].add(r["job_id"])
+        first_in_chip.setdefault(r["chip_id"], r["record_id"])
+    viols: list[Violation] = []
+    for chip, jobs in by_chip.items():
+        if len(jobs) > max_jobs:
+            viols.append(Violation(
+                rule_id="chip_job_stability",
+                record_id=first_in_chip[chip],
+                message=(
+                    f"chip_id={chip} reports records under {len(jobs)} distinct "
+                    f"job_ids in this audit window (max={max_jobs}). "
+                    f"Chip job-hopping indicates run fragmentation."
+                ),
+            ))
+    return viols
+
+
 def _code_commit_per_job_stable(records: list[dict], rule: dict) -> list[Violation]:
     """Within a single job_id, code_commit must be stable. Real training
     runs use one code version per logical run; rotating code_commit mid-job
@@ -497,6 +561,8 @@ DETERMINISTIC_DISPATCH = {
     "max_flop_per_token": _max_flop_per_token,
     "cross_job_fingerprint_consistency": _cross_job_fingerprint_consistency,
     "code_commit_per_job_stable": _code_commit_per_job_stable,
+    "chip_job_stability": _chip_job_stability,
+    "operator_op_type_uniqueness": _operator_op_type_uniqueness,
 }
 
 

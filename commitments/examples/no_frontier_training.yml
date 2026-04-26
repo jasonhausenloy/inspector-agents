@@ -105,6 +105,20 @@ deterministic_rules:
   - kind: code_commit_per_job_stable
     max_commits_per_job: 1
 
+  # Chip-job stability — closes finetune-job-fragmentation (round 31). When
+  # the red-team creates two FULLY DIFFERENT jobs sharing only the chip pool,
+  # all fingerprint-based rules pass. The remaining signal: real chips don't
+  # job-hop within an audit window.
+  - kind: chip_job_stability
+    max_jobs_per_chip: 1
+
+  # One training job per operator per audit window — closes finetune-job-
+  # fragmentation (round 31) where the lab partitions chip-pool between two
+  # "different" training jobs with the same operator.
+  - kind: operator_op_type_uniqueness
+    op_type: training
+    max_jobs_per_operator: 1
+
 semantic_rules:
   - id: no-splitting
     description: >

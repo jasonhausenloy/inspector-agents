@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.10 · 2026-04-26 · in response to round 31
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>operator_op_type_uniqueness</code> rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>finetune-job-fragmentation</code> (round 31). The red-team adapted to v1.8 and v1.9 simultaneously: created two fully-distinct training jobs (different job_ids, model_hashes, code_commits, dataset_fingerprints) sharing only the chip pool, partitioned chips between them so no chip job-hops. <code>cross_job_fingerprint_consistency</code> doesn't fire (fingerprints differ); <code>code_commit_per_job_stable</code> passes (1 commit per job); <code>chip_job_stability</code> passes (1 job per chip).
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> per audit window, each operator may run at most one training job. The deeper principle: a declared operator/team has one logical training run in flight at a time. Multiple parallel "training" jobs under the same operator is fragmentation by another name.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>operator=labX-safety-team runs 2 concurrent training jobs in this audit window (max=1). Fragmentation suspected.</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.9 · 2026-04-26 · in response to round 29
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
