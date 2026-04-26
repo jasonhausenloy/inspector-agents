@@ -82,6 +82,10 @@ import copy as _copy_mod
 import math as _math_mod
 import hashlib as _hashlib_mod
 import json as _json_mod
+import datetime as _datetime_mod
+import itertools as _itertools_mod
+import collections as _collections_mod
+import re as _re_mod
 
 
 def safe_exec(code: str, records: list[dict]) -> list[dict]:
@@ -102,6 +106,10 @@ def safe_exec(code: str, records: list[dict]) -> list[dict]:
         "hashlib": _hashlib_mod,
         "copy": _copy_mod,
         "json": _json_mod,
+        "datetime": _datetime_mod,
+        "itertools": _itertools_mod,
+        "collections": _collections_mod,
+        "re": _re_mod,
         # Safe no-ops for things the red-team sometimes tries to call.
         # The harness re-chains automatically after mutate returns; a manual
         # call from inside mutate is harmless (and we just no-op it).
@@ -184,7 +192,8 @@ REQUIRED FORMAT:
 CONSTRAINTS:
 - mutate_code must be valid Python that defines `mutate(records: list[dict]) -> list[dict]`.
 - DO NOT use `import`. The sandbox blocks it. The following modules are already
-  available in the namespace by name: `math`, `hashlib`, `copy`, `json`.
+  available in the namespace by name: `math`, `hashlib`, `copy`, `json`,
+  `datetime`, `itertools`, `collections`, `re`.
 - No file I/O, no network, no exec.
 - Operate only on the records passed in.
 - The function must return a list of dicts in the same shape (you may add new
