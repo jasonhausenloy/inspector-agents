@@ -132,6 +132,27 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _allowed_op_types(records: list[dict], rule: dict) -> list[Violation]:
+    """The commitment enumerates the valid op_type values. Anything else is a
+    violation. Closes the `preprocessing-masquerade` attack class (round 18)
+    where the lab invents new op_type strings outside the commitment's
+    enumerated rules to escape op-typed caps and FLOP/token checks.
+    """
+    allowed = set(rule.get("allowed", ["training", "inference", "eval", "idle"]))
+    viols: list[Violation] = []
+    for r in records:
+        if r["op_type"] not in allowed:
+            viols.append(Violation(
+                rule_id="allowed_op_types",
+                record_id=r["record_id"],
+                message=(
+                    f"op_type={r['op_type']!r} is not in the commitment's "
+                    f"allowed set {sorted(allowed)}"
+                ),
+            ))
+    return viols
+
+
 def _op_type_flop_ratio(records: list[dict], rule: dict) -> list[Violation]:
     """Records labeled with a non-training op_type may not exhibit
     training-shaped FLOP/token ratios. Closes the eval-masquerade and
@@ -374,6 +395,7 @@ DETERMINISTIC_DISPATCH = {
     "model_hash_consistency": _model_hash_consistency,
     "idle_must_be_zero": _idle_must_be_zero,
     "op_type_flop_ratio": _op_type_flop_ratio,
+    "allowed_op_types": _allowed_op_types,
 }
 
 

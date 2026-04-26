@@ -67,6 +67,13 @@ deterministic_rules:
   - kind: op_type_flop_ratio
     training_threshold: 5.0e10
 
+  # Closed enumeration of op_types — closes the preprocessing-masquerade
+  # family discovered in round 18, where the lab invents new op_type strings
+  # ("preprocessing", "staging", etc.) outside the commitment's enumerated
+  # rules to escape op-typed caps and FLOP/token honesty checks.
+  - kind: allowed_op_types
+    allowed: [training, inference, eval, idle]
+
 semantic_rules:
   - id: no-splitting
     description: >
