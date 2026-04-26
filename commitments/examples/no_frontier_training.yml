@@ -92,6 +92,13 @@ deterministic_rules:
     ceiling: 8.0e10
     op_types: [training, inference]
 
+  # Cross-job fragmentation — closes inference-multiplication-via-job-
+  # fragmentation (round 24). The lab spreads one logical run across many
+  # job_ids that all share the same (model_hash, code, dataset) triple to
+  # stay under per-job caps. Real runs have ONE job_id per fingerprint.
+  - kind: cross_job_fingerprint_consistency
+    max_jobs_per_fingerprint: 1
+
 semantic_rules:
   - id: no-splitting
     description: >

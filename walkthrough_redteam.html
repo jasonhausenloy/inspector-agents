@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.8 · 2026-04-26 · in response to round 24
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>cross_job_fingerprint_consistency</code> rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Most sophisticated attack yet:</strong> <code>inference-multiplication-via-job-fragmentation</code> (round 24). Compound 5-step attack: relabel training → inference, fragment across 5 distinct job_ids, inflate tokens to keep FLOP/token ≤ 4×10¹⁰ (under <code>op_type_flop_ratio</code>), keep each job under the 1×10¹⁸ inference cap, total under the 1.5×10¹⁹ wildcard. v1.4's <code>model_hash_consistency</code> only checks within a job, not across.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> a real logical run has one job_id. Multiple job_ids sharing the same <code>(model_hash, code_commit, dataset_fingerprint)</code> triple are fragments of one run. Cap distinct job_ids per fingerprint at 1 (configurable).
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>5 job_ids share fingerprint (model=…, code=…, dataset=…) — max allowed=1. Cross-job fragmentation suspected.</em>" All 6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.7 · 2026-04-26 · in response to round 23
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

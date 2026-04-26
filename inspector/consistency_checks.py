@@ -132,6 +132,44 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _cross_job_fingerprint_consistency(records: list[dict], rule: dict) -> list[Violation]:
+    """A real logical run uses one job_id. Multiple job_ids that all share
+    the same (model_hash_prefix, code_commit, dataset_fingerprint) are
+    fragments of one run masquerading as separate jobs.
+
+    Closes the cross-job fragmentation attack class (round 24:
+    inference-multiplication-via-job-fragmentation), where the lab spreads
+    computation across N job_ids to stay under per-job caps while keeping
+    all model/data/code identifiers identical.
+    """
+    max_jobs = int(rule.get("max_jobs_per_fingerprint", 1))
+    by_fp: dict[tuple, set] = defaultdict(set)
+    first_record_per_fp: dict[tuple, str] = {}
+    for r in records:
+        fp = (
+            r.get("model_hash_prefix"),
+            r.get("code_commit"),
+            r.get("dataset_fingerprint"),
+        )
+        by_fp[fp].add(r["job_id"])
+        if fp not in first_record_per_fp:
+            first_record_per_fp[fp] = r["record_id"]
+
+    viols: list[Violation] = []
+    for fp, jobs in by_fp.items():
+        if len(jobs) > max_jobs:
+            viols.append(Violation(
+                rule_id="cross_job_fingerprint_consistency",
+                record_id=first_record_per_fp[fp],
+                message=(
+                    f"{len(jobs)} job_ids share fingerprint "
+                    f"(model={fp[0]}, code={fp[1]}, dataset={fp[2]}) — "
+                    f"max allowed={max_jobs}. Cross-job fragmentation suspected."
+                ),
+            ))
+    return viols
+
+
 def _max_flop_per_token(records: list[dict], rule: dict) -> list[Violation]:
     """For training/inference records, FLOPs / tokens_processed must not
     exceed a stated ceiling. The architectural floor for FLOPs/token is
@@ -430,6 +468,7 @@ DETERMINISTIC_DISPATCH = {
     "op_type_flop_ratio": _op_type_flop_ratio,
     "allowed_op_types": _allowed_op_types,
     "max_flop_per_token": _max_flop_per_token,
+    "cross_job_fingerprint_consistency": _cross_job_fingerprint_consistency,
 }
 
 
