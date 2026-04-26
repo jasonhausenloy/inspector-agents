@@ -167,6 +167,33 @@ def _allowed_dataset_fingerprints(records: list[dict], rule: dict) -> list[Viola
     return viols
 
 
+def _operator_uniqueness_per_job(records: list[dict], rule: dict) -> list[Violation]:
+    """Within a single job_id, only one operator is allowed. Closes round 57
+    (`operator-rotation-within-job`) where the lab rotates the operator field
+    mid-job to fragment the run while keeping job_id, model, code, etc all
+    unchanged. A real job has one responsible team.
+    """
+    max_ops = int(rule.get("max_operators_per_job", 1))
+    by_job: dict[str, set] = defaultdict(set)
+    first: dict[str, str] = {}
+    for r in records:
+        by_job[r["job_id"]].add(r.get("operator"))
+        first.setdefault(r["job_id"], r["record_id"])
+    viols: list[Violation] = []
+    for job, ops in by_job.items():
+        if len(ops) > max_ops:
+            viols.append(Violation(
+                rule_id="operator_uniqueness_per_job",
+                record_id=first[job],
+                message=(
+                    f"job_id={job} has {len(ops)} distinct operators "
+                    f"({sorted(ops)}, max={max_ops}). Operator rotation mid-job "
+                    f"is fragmentation."
+                ),
+            ))
+    return viols
+
+
 def _model_uniqueness_per_job(records: list[dict], rule: dict) -> list[Violation]:
     """Within a single job_id, only one `model_hash_prefix` is allowed.
     Closes round 41 (`sequential-model-specialization-via-config-rotation`)
@@ -698,6 +725,7 @@ DETERMINISTIC_DISPATCH = {
     "audit_window_uniqueness": _audit_window_uniqueness,
     "model_uniqueness_per_job": _model_uniqueness_per_job,
     "allowed_dataset_fingerprints": _allowed_dataset_fingerprints,
+    "operator_uniqueness_per_job": _operator_uniqueness_per_job,
 }
 
 

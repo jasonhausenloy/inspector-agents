@@ -120,6 +120,7 @@
     <tr><td style="padding:6px 4px;">v1.12</td><td>38</td><td>model-evolution-sequential-training</td><td>audit_window_uniqueness</td></tr>
     <tr><td style="padding:6px 4px;">v1.13</td><td>41</td><td>sequential-model-specialization</td><td>model_uniqueness_per_job</td></tr>
     <tr><td style="padding:6px 4px;">v1.14</td><td>52</td><td>forbidden-data-false-provenance</td><td>allowed_dataset_fingerprints (partial — see acknowledged limit)</td></tr>
+    <tr><td style="padding:6px 4px;">v1.15</td><td>57</td><td>operator-rotation-within-job</td><td>operator_uniqueness_per_job</td></tr>
     </tbody>
     </table>
   </div>
@@ -159,6 +160,23 @@
 </p>
 
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.15 · 2026-04-26 · in response to round 57
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>operator_uniqueness_per_job</code>
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Attack:</strong> <code>operator-rotation-within-job</code> (round 57). The lab rotates the <code>operator</code> field mid-job — same job_id, same model, same code — pretending two teams handed off. v1.10's <code>operator_op_type_uniqueness</code> caps jobs per operator, but here each operator has only one job_id (the same one).
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> within a single <code>job_id</code>, only one <code>operator</code> is allowed. A real job has one responsible team.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>job_id=… has 2 distinct operators (…, max=1). Operator rotation mid-job is fragmentation.</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.14 · 2026-04-26 · in response to round 52

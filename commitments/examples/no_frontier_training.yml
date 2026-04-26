@@ -142,6 +142,12 @@ deterministic_rules:
     op_type: training
     max_models_per_job: 1
 
+  # One operator per job — closes round 57 (operator-rotation-within-job)
+  # where the lab rotates the operator field mid-job. A job has one
+  # responsible team.
+  - kind: operator_uniqueness_per_job
+    max_operators_per_job: 1
+
   # Approved dataset-fingerprint registry — partial mitigation for round 52
   # (forbidden-data-false-provenance). Only fingerprints in the registry are
   # accepted. Forging an entry requires open public review of the dataset.
