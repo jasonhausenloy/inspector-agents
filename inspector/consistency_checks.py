@@ -132,6 +132,37 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _audit_window_uniqueness(records: list[dict], rule: dict) -> list[Violation]:
+    """Within a single audit window, all records of a given op_type belong to
+    one job_id (across all operators). The strictest variant of the
+    fragmentation defense — closes round 38 (`model-evolution-sequential-
+    training`) where every other identifier differs across jobs but they
+    share an audit window. Real treaties expect a single declared training
+    run per audit window.
+    """
+    max_jobs = int(rule.get("max_jobs", 1))
+    op_type = rule.get("op_type", "training")
+    jobs_seen: set[str] = set()
+    first_record: str | None = None
+    for r in records:
+        if r.get("op_type") != op_type:
+            continue
+        jobs_seen.add(r["job_id"])
+        if first_record is None:
+            first_record = r["record_id"]
+    if len(jobs_seen) > max_jobs:
+        return [Violation(
+            rule_id="audit_window_uniqueness",
+            record_id=first_record,
+            message=(
+                f"audit window contains {len(jobs_seen)} {op_type} job_ids "
+                f"({sorted(jobs_seen)}); commitment allows max={max_jobs}. "
+                f"Run-fragmentation across jobs suspected."
+            ),
+        )]
+    return []
+
+
 def _operator_op_type_uniqueness(records: list[dict], rule: dict) -> list[Violation]:
     """Within an audit window, each operator should have at most N concurrent
     training jobs (default 1). Closes the round-31 family where the lab
@@ -598,6 +629,7 @@ DETERMINISTIC_DISPATCH = {
     "chip_job_stability": _chip_job_stability,
     "operator_op_type_uniqueness": _operator_op_type_uniqueness,
     "training_unique_per_model": _training_unique_per_model,
+    "audit_window_uniqueness": _audit_window_uniqueness,
 }
 
 

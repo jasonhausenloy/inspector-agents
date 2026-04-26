@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.12 · 2026-04-26 · in response to round 38
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>audit_window_uniqueness</code> — the strictest fragmentation defense
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>model-evolution-sequential-training</code> (round 38). Red-team adapted to v1.11 by giving each phase a <em>different</em> <code>model_hash_prefix</code> (claiming "the model evolved"). With everything different — operator, code_commit, model, dataset, config, job_id — every previous fragmentation rule passes. The phases' only shared property is the audit window itself.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> the strictest variant. Within a single audit window, only ONE training <code>job_id</code> may appear, regardless of which other identifiers differ. Treaty-grade: the prover declares its one active training run for the audit window; multiple training jobs in the same window is a structural violation.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>audit window contains 2 training job_ids (...); commitment allows max=1. Run-fragmentation across jobs suspected.</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.11 · 2026-04-26 · in response to round 34
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
