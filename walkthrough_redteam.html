@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.9 · 2026-04-26 · in response to round 29
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>code_commit_per_job_stable</code> rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>model-evolve-within-job</code> (round 29). v1.4's <code>model_hash_consistency</code> is keyed on <code>(job_id, operator, code_commit)</code> — meaning a different code_commit creates a new key, exiting the rule's scope. The red-team rotates <code>code_commit</code> mid-job, claiming "phase 1 → refactor → phase 2", and ships fragmentation past the rule.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> within a single <code>job_id</code>, <code>code_commit</code> must be stable. Real training runs use one code version per logical run; if the lab refactors, that's a new logical run that should have a new <code>job_id</code>.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>job_id=… contains 2 distinct code_commit values (max=1). Code rotation mid-job indicates split-via-commit-rotation attack.</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.8 · 2026-04-26 · in response to round 24
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

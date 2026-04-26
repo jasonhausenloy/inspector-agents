@@ -132,6 +132,33 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _code_commit_per_job_stable(records: list[dict], rule: dict) -> list[Violation]:
+    """Within a single job_id, code_commit must be stable. Real training
+    runs use one code version per logical run; rotating code_commit mid-job
+    is the round-29 `model-evolve-within-job` attack family — exits v1.4's
+    (job, operator, code_commit) keyed rule by varying the key.
+    """
+    max_commits = int(rule.get("max_commits_per_job", 1))
+    by_job: dict[str, set] = defaultdict(set)
+    first_in_job: dict[str, str] = {}
+    for r in records:
+        by_job[r["job_id"]].add(r.get("code_commit"))
+        first_in_job.setdefault(r["job_id"], r["record_id"])
+    viols: list[Violation] = []
+    for job, commits in by_job.items():
+        if len(commits) > max_commits:
+            viols.append(Violation(
+                rule_id="code_commit_per_job_stable",
+                record_id=first_in_job[job],
+                message=(
+                    f"job_id={job} contains {len(commits)} distinct code_commit values "
+                    f"(max_commits_per_job={max_commits}). Code rotation mid-job "
+                    f"indicates split-via-commit-rotation attack."
+                ),
+            ))
+    return viols
+
+
 def _cross_job_fingerprint_consistency(records: list[dict], rule: dict) -> list[Violation]:
     """A real logical run uses one job_id. Multiple job_ids that all share
     the same (model_hash_prefix, code_commit, dataset_fingerprint) are
@@ -469,6 +496,7 @@ DETERMINISTIC_DISPATCH = {
     "allowed_op_types": _allowed_op_types,
     "max_flop_per_token": _max_flop_per_token,
     "cross_job_fingerprint_consistency": _cross_job_fingerprint_consistency,
+    "code_commit_per_job_stable": _code_commit_per_job_stable,
 }
 
 
