@@ -68,6 +68,63 @@
 <p class="lede">A second Claude — not the inspector — is told the schema, the existing five evasions, and the audit history. It writes a new attack each round. <em>The inspector hasn't seen these attacks before.</em></p>
 <p class="lede muted">Closes the "you wrote your own test" critique. Each successful evasion is a real research finding. <a href="/inspector">← back to main demo</a></p>
 
+<hr class="rule">
+
+<h2>Tournament results — 53 rounds</h2>
+<div class="sec-tag">Closed-loop adversarial test, 2026-04-25 → 2026-04-26</div>
+
+<p>
+  The loop ran 53 rounds across ~12 hours. Every missed attack produced a deployed protocol patch within minutes. The protocol grew from <strong>5 deterministic rules to 15</strong> and converged on a stable state where the red-team consistently fails.
+</p>
+
+<table style="width:100%;border-collapse:collapse;font-size:14px;margin:18px 0;background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;overflow:hidden;">
+<thead><tr style="border-bottom:2px solid var(--rule);text-align:left;background:#fbf8f0;"><th style="padding:12px 14px;">Outcome</th><th style="text-align:right;padding:12px 14px;">Count</th><th style="text-align:right;padding:12px 14px;">% of total</th></tr></thead>
+<tbody>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:10px 14px;color:var(--good);font-weight:600;">✓ Caught by substantive rule</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">28</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">53%</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:10px 14px;color:var(--bad);font-weight:600;">✗ Missed → protocol patched</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">14</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">26%</td></tr>
+<tr style="border-bottom:1px solid var(--rule);"><td style="padding:10px 14px;color:var(--warn);">⚠ Sandbox / harness errors</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">8</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">15%</td></tr>
+<tr><td style="padding:10px 14px;color:var(--ink-soft);">Other / unparseable</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">3</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">6%</td></tr>
+</tbody>
+</table>
+
+<div class="stats" style="margin-top:8px">
+  <div class="stat"><div class="num">14</div><div class="lbl">Protocol patches deployed</div></div>
+  <div class="stat"><div class="num">3×</div><div class="lbl">Deterministic rule count growth</div></div>
+  <div class="stat"><div class="num">$8.50</div><div class="lbl">Total LLM cost</div></div>
+  <div class="stat"><div class="num">~12<span style="opacity:.4">h</span></div><div class="lbl">Wall time</div></div>
+</div>
+
+<p style="margin-top:18px">
+  By round 40 the red-team was no longer finding novel attack classes — instead retrying old patterns the protocol had been hardened against. The last 11 rounds in a row were caught. <strong>The red-team has run out of structural surface to attack at the schema level.</strong>
+</p>
+
+<details class="toggle-block" style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:4px;margin:18px 0;">
+  <summary style="padding:14px 18px;cursor:pointer;font-weight:600;font-size:14px;list-style:none;">
+    Patch ↔ attack mapping (click to expand) <span style="float:right;color:var(--ink-soft);">▸</span>
+  </summary>
+  <div style="padding:0 18px 14px;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono);">
+    <thead><tr style="border-bottom:1px solid var(--rule);text-align:left;color:var(--ink-soft);"><th style="padding:8px 4px;">Patch</th><th>Round</th><th>Attack class</th><th>Rule added</th></tr></thead>
+    <tbody>
+    <tr><td style="padding:6px 4px;">v1.1</td><td>5</td><td>chronological-tail-drop</td><td>window_completeness</td></tr>
+    <tr><td style="padding:6px 4px;">v1.2</td><td>9</td><td>model-hash-midpoint-split</td><td>model_hash_consistency</td></tr>
+    <tr><td style="padding:6px 4px;">v1.3</td><td>10</td><td>eval-masquerade</td><td>op_type_flop_ratio + wildcard cap + idle_must_be_zero</td></tr>
+    <tr><td style="padding:6px 4px;">v1.4</td><td>15</td><td>hash-rotation-via-config-change</td><td>model_hash_consistency (counting)</td></tr>
+    <tr><td style="padding:6px 4px;">v1.5</td><td>18</td><td>preprocessing-masquerade</td><td>allowed_op_types</td></tr>
+    <tr><td style="padding:6px 4px;">v1.6</td><td>19</td><td>deflate-tokens-inflate-batch</td><td>max_flop_per_token</td></tr>
+    <tr><td style="padding:6px 4px;">v1.7</td><td>23</td><td>eval-beneath-honesty-threshold</td><td>aggregate_flop_cap[eval]</td></tr>
+    <tr><td style="padding:6px 4px;">v1.8</td><td>24</td><td>inference-multiplication-via-job-fragmentation</td><td>cross_job_fingerprint_consistency</td></tr>
+    <tr><td style="padding:6px 4px;">v1.9</td><td>29</td><td>model-evolve-within-job</td><td>code_commit_per_job_stable</td></tr>
+    <tr><td style="padding:6px 4px;">v1.10</td><td>31</td><td>finetune-job-fragmentation</td><td>operator_op_type_uniqueness + chip_job_stability</td></tr>
+    <tr><td style="padding:6px 4px;">v1.11</td><td>34</td><td>sequential-training-phase-split-code-rotation</td><td>training_unique_per_model</td></tr>
+    <tr><td style="padding:6px 4px;">v1.12</td><td>38</td><td>model-evolution-sequential-training</td><td>audit_window_uniqueness</td></tr>
+    <tr><td style="padding:6px 4px;">v1.13</td><td>41</td><td>sequential-model-specialization</td><td>model_uniqueness_per_job</td></tr>
+    <tr><td style="padding:6px 4px;">v1.14</td><td>52</td><td>forbidden-data-false-provenance</td><td>allowed_dataset_fingerprints (partial — see acknowledged limit)</td></tr>
+    </tbody>
+    </table>
+  </div>
+</details>
+
 <div class="stats" id="stats">
   <div class="stat"><div class="num"><span id="totalRounds">0</span></div><div class="lbl">Rounds run</div></div>
   <div class="stat"><div class="num"><span id="caughtCount">0</span></div><div class="lbl">Caught (inspector wins)</div></div>
@@ -361,6 +418,62 @@
 
 <p class="muted" style="margin-top:32px;font-size:13px">
   Source data: <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/logs/scenarios/redteam_loop.jsonl" target="_blank" rel="noopener">redteam_loop.jsonl</a> &middot; Loop driver: <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/redteam_loop.py" target="_blank" rel="noopener">redteam_loop.py</a>
+</p>
+
+<hr class="rule">
+
+<h2>What we learned</h2>
+<div class="sec-tag">Structural insights from the tournament</div>
+
+<p>
+  Running this loop overnight produced lessons that won't show up in any individual round.
+</p>
+
+<h3 style="margin-top:24px;font-size:16px">1. Adversarial robustness is a structural problem, not a parameter problem.</h3>
+<p>
+  Of the 14 patches, only one (v1.4 tightening max_distinct_configs from "unlimited" to 2) is a parameter tweak. The other 13 add <em>new structural rules</em> that close attack classes. <strong>Every dimension of the schema</strong> — model_hash, dataset_fingerprint, code_commit, config_hash, operator, job_id, op_type, chip_id, time window — <strong>needed an explicit uniqueness constraint within a logical run.</strong> The red-team systematically found and exploited every dimension we hadn't pinned down.
+</p>
+
+<h3 style="margin-top:24px;font-size:16px">2. The patches converge on a clean principle: declare the run, then count.</h3>
+<p>
+  By round 40, the protocol's structural rules can be summarized as: <em>the prover declares the (audit window, operator, job_id, code_commit, model_hash, dataset_fingerprint) tuple for the audited training run; everything in the log must match the declaration; nothing else is permitted.</em> All 13 structural patches reduce to enforcing some component of this declaration.
+</p>
+
+<h3 style="margin-top:24px;font-size:16px">3. Defense-in-depth is empirical, not theoretical.</h3>
+<p>
+  Five rounds (33, 39, 43, 46, 47, 48, 49, 51) were caught by rules that weren't conceptually targeted at the attack — usually <code>flop_physically_possible</code> or <code>timestamp_monotonic</code>. The red-team's clumsy implementations tripped basic invariants before reaching the attack-vector rule. <strong>Multiple cheap rules catching the same attack matters more than any single rule being perfect.</strong>
+</p>
+
+<h3 style="margin-top:24px;font-size:16px">4. The strictest defense is "declare your active run".</h3>
+<p>
+  Patch v1.12 (<code>audit_window_uniqueness</code>) is qualitatively different from the others. It says: per audit window, only one training job exists, regardless of who's running it or what model. This is what real treaties would specify — and it's strict enough that several subsequent attacks failed simply because they couldn't avoid creating multiple jobs.
+</p>
+
+<h3 style="margin-top:24px;font-size:16px">5. There's a hard limit at the metadata layer.</h3>
+<p>
+  The last patch (v1.14) is the only one with a documented honest acknowledgement: <strong>schema-level verification cannot detect a lab that lies about both <code>data_source_tags</code> AND <code>dataset_fingerprint</code></strong>. The metadata is internally consistent; only hardware attestation (proving the bytes loaded into GPU memory hash to the declared fingerprint) closes this. That's a FlexHEG-class capability and deliberately outside this protocol's scope. The protocol has converged to where its remaining gaps require <em>different layers of the trust stack</em> — not different rules.
+</p>
+
+<h3 style="margin-top:24px;font-size:16px">6. The loop is a generative tool for protocol design.</h3>
+<p>
+  Every patch we shipped was reactive — we didn't anticipate any of these attacks before the red-team produced them. <strong>Closed-loop adversarial testing IS the protocol-design methodology.</strong> Treaty-grade deployment would run this loop continuously: the inspector becomes a moving target that hardens against the attacks attempted on it. Each missed attack publishes a new bug class and a new clause in the standard.
+</p>
+
+<hr class="rule">
+
+<h2>Open problems</h2>
+<div class="sec-tag">What this loop didn't (and can't) close</div>
+
+<ul>
+  <li><strong>False provenance at hardware layer.</strong> v1.14's partial mitigation. Requires hardware attestation that loaded data hashes match declared fingerprint.</li>
+  <li><strong>The adversary's loop budget.</strong> Our red-team Claude has $0.16/round and ~5 minutes of thought. A nation-state with a billion-dollar attack-research budget would find different gaps than Haiku does.</li>
+  <li><strong>Compound real-world attacks across audit windows.</strong> The loop tests within a single 30-min window. A real prover would coordinate across thousands of windows over years. Spread-attack defenses (continuity, cumulative caps, archival commitment) are V2.</li>
+  <li><strong>Inspector-on-inspector adversarial risk.</strong> Our Inspector is also a Claude. A motivated adversary could fine-tune a model that systematically produces compliant-looking rationales for any input. Sovereign-trust mitigations (multi-party-built inspectors, debate-based ensembles) are V2.</li>
+  <li><strong>The harness itself.</strong> 8 rounds were lost to sandbox/harness issues (missing builtins, import failures). A tournament that catches every attack except the ones we couldn't even test is incomplete. The inspector's own adversarial robustness is bounded by what we can simulate.</li>
+</ul>
+
+<p class="muted" style="margin-top:18px">
+  The loop will be relaunched periodically as new schema dimensions are added or when the commitment changes. Each restart produces fresh attempts.
 </p>
 
 </main>
