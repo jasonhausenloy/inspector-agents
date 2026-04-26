@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.13 · 2026-04-26 · in response to round 41
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>model_uniqueness_per_job</code> rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>sequential-model-specialization-via-config-rotation</code> (round 41). Red-team adapted to v1.12 by keeping <code>job_id</code> single but rotating <code>model_hash_prefix</code> twice within it — exploiting v1.4's <code>max_distinct_configs: 2</code> allowance for legitimate mid-run reconfigs. "Two models trained sequentially in one job."
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> a job trains one model, period. Within a single <code>job_id</code>, only one <code>model_hash_prefix</code> may appear in training records. If the lab wants to train multiple models, each gets its own job_id (which then trips <code>audit_window_uniqueness</code>).
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>job_id=… contains 2 distinct model_hash_prefix values (max=1). Sequential multi-model training in one job is fragmentation.</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.12 · 2026-04-26 · in response to round 38
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

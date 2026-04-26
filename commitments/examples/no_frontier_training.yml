@@ -135,6 +135,13 @@ deterministic_rules:
     op_type: training
     max_jobs: 1
 
+  # One model per job — closes round 41 (sequential-model-specialization-via-
+  # config-rotation), where the lab rotates model_hash within one job_id.
+  # A job trains one model; sequential multi-model needs separate job_ids.
+  - kind: model_uniqueness_per_job
+    op_type: training
+    max_models_per_job: 1
+
 semantic_rules:
   - id: no-splitting
     description: >

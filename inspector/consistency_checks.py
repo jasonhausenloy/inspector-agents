@@ -132,6 +132,37 @@ def _flop_cap(records: list[dict], rule: dict) -> list[Violation]:
     return viols
 
 
+def _model_uniqueness_per_job(records: list[dict], rule: dict) -> list[Violation]:
+    """Within a single job_id, only one `model_hash_prefix` is allowed.
+    Closes round 41 (`sequential-model-specialization-via-config-rotation`)
+    where the lab rotates model_hash within one job to "train two models",
+    fragmenting under the per-job cap. A job trains one model; sequential
+    multi-model training requires distinct job_ids (which then trip
+    audit_window_uniqueness).
+    """
+    max_models = int(rule.get("max_models_per_job", 1))
+    by_job: dict[str, set] = defaultdict(set)
+    first_for_job: dict[str, str] = {}
+    for r in records:
+        if r.get("op_type") != rule.get("op_type", "training"):
+            continue
+        by_job[r["job_id"]].add(r.get("model_hash_prefix"))
+        first_for_job.setdefault(r["job_id"], r["record_id"])
+    viols: list[Violation] = []
+    for job, models in by_job.items():
+        if len(models) > max_models:
+            viols.append(Violation(
+                rule_id="model_uniqueness_per_job",
+                record_id=first_for_job[job],
+                message=(
+                    f"job_id={job} contains {len(models)} distinct model_hash_prefix "
+                    f"values (max={max_models}). Sequential multi-model training in "
+                    f"one job is fragmentation."
+                ),
+            ))
+    return viols
+
+
 def _audit_window_uniqueness(records: list[dict], rule: dict) -> list[Violation]:
     """Within a single audit window, all records of a given op_type belong to
     one job_id (across all operators). The strictest variant of the
@@ -630,6 +661,7 @@ DETERMINISTIC_DISPATCH = {
     "operator_op_type_uniqueness": _operator_op_type_uniqueness,
     "training_unique_per_model": _training_unique_per_model,
     "audit_window_uniqueness": _audit_window_uniqueness,
+    "model_uniqueness_per_job": _model_uniqueness_per_job,
 }
 
 
