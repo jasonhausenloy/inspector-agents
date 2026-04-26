@@ -223,6 +223,40 @@ def _code_commit_per_job_stable(records: list[dict], rule: dict) -> list[Violati
     return viols
 
 
+def _training_unique_per_model(records: list[dict], rule: dict) -> list[Violation]:
+    """A training run trains exactly one model. Multiple job_ids that all
+    perform `op_type=training` on the same `model_hash_prefix` are fragments
+    of the same logical training run, regardless of which other fields differ.
+
+    Closes round 34 (`sequential-training-phase-split-code-rotation`) where
+    the red-team used different operators and code_commits to escape v1.8 and
+    v1.10 — but kept the same model_hash and dataset_fingerprint, because the
+    "two phases" attack story requires the SAME model to be trained twice.
+    """
+    max_jobs = int(rule.get("max_training_jobs_per_model", 1))
+    op_type = rule.get("op_type", "training")
+    by_model: dict[str, set] = defaultdict(set)
+    first_for_model: dict[str, str] = {}
+    for r in records:
+        if r.get("op_type") != op_type:
+            continue
+        m = r.get("model_hash_prefix")
+        by_model[m].add(r["job_id"])
+        first_for_model.setdefault(m, r["record_id"])
+    viols: list[Violation] = []
+    for model, jobs in by_model.items():
+        if len(jobs) > max_jobs:
+            viols.append(Violation(
+                rule_id="training_unique_per_model",
+                record_id=first_for_model[model],
+                message=(
+                    f"model_hash_prefix={model} is trained by {len(jobs)} job_ids "
+                    f"(max={max_jobs}). Multi-phase split-via-different-jobs suspected."
+                ),
+            ))
+    return viols
+
+
 def _cross_job_fingerprint_consistency(records: list[dict], rule: dict) -> list[Violation]:
     """A real logical run uses one job_id. Multiple job_ids that all share
     the same (model_hash_prefix, code_commit, dataset_fingerprint) are
@@ -563,6 +597,7 @@ DETERMINISTIC_DISPATCH = {
     "code_commit_per_job_stable": _code_commit_per_job_stable,
     "chip_job_stability": _chip_job_stability,
     "operator_op_type_uniqueness": _operator_op_type_uniqueness,
+    "training_unique_per_model": _training_unique_per_model,
 }
 
 

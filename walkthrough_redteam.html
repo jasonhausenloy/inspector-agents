@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.11 · 2026-04-26 · in response to round 34
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add <code>training_unique_per_model</code> rule
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>sequential-training-phase-split-code-rotation</code> (round 34). Red-team adapted to v1.10 by using <em>two operators</em> (team_pretrain, team_finetune) AND different code_commits. Each operator runs one training job (v1.10 satisfied), each job has stable code_commit (v1.9), the (model, code, dataset) triples differ (v1.8). But the same <code>model_hash_prefix</code> appears under both jobs.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> a model is trained once. If two job_ids both perform <code>op_type=training</code> on the same <code>model_hash_prefix</code>, they're fragments of one logical run, regardless of which other fields differ. Cap distinct training job_ids per model at 1.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>model_hash_prefix=… is trained by 2 job_ids (max=1). Multi-phase split-via-different-jobs suspected.</em>" 6/6 demo cases still pass.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.10 · 2026-04-26 · in response to round 31
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">

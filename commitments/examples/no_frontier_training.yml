@@ -119,6 +119,14 @@ deterministic_rules:
     op_type: training
     max_jobs_per_operator: 1
 
+  # One training run per model — closes round 34 (sequential-training-phase-
+  # split-code-rotation). Even when operator and code_commit differ, two
+  # training jobs sharing the same model_hash_prefix are fragments of one
+  # logical training run; a model is trained once.
+  - kind: training_unique_per_model
+    op_type: training
+    max_training_jobs_per_model: 1
+
 semantic_rules:
   - id: no-splitting
     description: >
