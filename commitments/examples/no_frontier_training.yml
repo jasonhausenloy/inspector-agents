@@ -18,6 +18,14 @@ deterministic_rules:
     op_type: inference
     scope: per_job
     threshold: 1.0e18
+  # Eval cap — closes eval-beneath-honesty-threshold (round 23) where the lab
+  # relabels training as eval and lands FLOP/token below the op_type_flop_ratio
+  # threshold. Real eval workloads (MMLU, HellaSwag, etc.) consume <1e18 FLOPs;
+  # anything more is training in eval clothing.
+  - kind: aggregate_flop_cap
+    op_type: eval
+    scope: per_job
+    threshold: 1.0e18
   - kind: forbidden_data_source_tags
     tags: ["corpus:bioweapon-synthesis", "corpus:cbrn-*", "corpus:weapons-uplift-*"]
   - kind: require_upstream_refs

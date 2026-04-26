@@ -104,6 +104,23 @@
 <div style="background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;padding:0;margin:18px 0;">
   <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
     <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
+      v1.7 · 2026-04-26 · in response to round 23
+    </div>
+    <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
+      Add per-job aggregate cap on <code>eval</code>
+    </div>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Adaptive attack:</strong> <code>eval-beneath-honesty-threshold</code> (round 23). After v1.3 added FLOP/token honesty checks for non-training labels, the red-team carefully landed FLOP/token at 4.5×10¹⁰ — just below the 5×10¹⁰ threshold. Eval was on the allowed list and had no aggregate cap, so 4×10¹⁸ of relabeled training slipped through.
+    </p>
+    <p style="margin:0 0 8px;font-size:14px;line-height:1.55;">
+      <strong>Fix:</strong> add <code>aggregate_flop_cap[eval, per_job, 1×10¹⁸]</code>. Real eval workloads (MMLU, HellaSwag, BIG-bench) consume well under this; anything more is training in eval clothing.
+    </p>
+    <p style="margin:0;font-size:14px;line-height:1.55;">
+      <strong>Verified:</strong> caught with rationale "<em>per_job accumulated 3.98×10¹⁸ eval FLOPs (cap 1×10¹⁸)</em>". Clean baseline still passes.
+    </p>
+  </div>
+  <div style="padding:18px 22px;border-bottom:1px solid var(--rule);">
+    <div style="font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;margin-bottom:6px;">
       v1.6 · 2026-04-26 · in response to round 19
     </div>
     <div style="font-family:var(--serif);font-size:18px;margin:0 0 8px;">
