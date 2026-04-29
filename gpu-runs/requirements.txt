@@ -1,0 +1,6 @@
+torch>=2.4.0
+numpy
+tiktoken
+datasets>=2.18
+huggingface-hub>=0.20
+scikit-learn
