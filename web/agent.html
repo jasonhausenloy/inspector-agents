@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude reads. Claude decides. — Inspector MVP</title>
+<style>
+:root {
+  --bg: #f7f4ec;
+  --bg-card: #ffffff;
+  --ink: #1c1a17;
+  --ink-soft: #5e574e;
+  --rule: #e6dfd1;
+  --good: #1f6b3a;
+  --good-bg: #e6f1ea;
+  --bad: #8a1d1d;
+  --bad-bg: #f4e3e3;
+  --challenge: #b83232;
+  --pending: #94887a;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.65; }
+main { max-width: 720px; margin: 0 auto; padding: 56px 28px 96px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--challenge); margin-bottom: 12px; }
+h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 5vw, 48px); letter-spacing: -0.01em; line-height: 1.05; margin: 0 0 12px; }
+h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; margin: 56px 0 16px; }
+p { margin: 0 0 16px; }
+.lead { color: var(--ink-soft); font-size: 18px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 56px 0; }
+a { color: var(--challenge); text-decoration: none; border-bottom: 1px solid currentColor; }
+a:hover { color: var(--ink); }
+.back { font-family: var(--mono); font-size: 13px; margin-bottom: 32px; display: inline-block; }
+details.case {
+  border: 1px solid var(--rule);
+  background: var(--bg-card);
+  border-radius: 4px;
+  margin: 12px 0;
+  overflow: hidden;
+}
+details.case summary {
+  padding: 16px 20px;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 14px;
+  user-select: none;
+}
+details.case summary::-webkit-details-marker { display: none; }
+details.case summary::before {
+  content: "▸";
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  display: inline-block;
+  width: 12px;
+  transition: transform 0.2s ease;
+}
+details.case[open] summary::before { transform: rotate(90deg); }
+details.case .label { flex: 1 1 auto; font-weight: 600; color: var(--ink); }
+details.case .label small { display: block; font-weight: 400; font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+.verdict-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+.verdict-tag.training, .verdict-tag.above_threshold { background: var(--bad-bg); color: var(--bad); }
+.verdict-tag.inference, .verdict-tag.below_threshold { background: var(--good-bg); color: var(--good); }
+.verdict-tag.miss { background: #fff4d6; color: #7a5300; }
+.match-mark {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+.match-mark.ok { color: var(--good); }
+.match-mark.bad { color: var(--bad); }
+.case-body {
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--rule);
+}
+.case-body h3 {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 18px 0 8px;
+  font-weight: 600;
+}
+.case-body p.rationale {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+.case-body ul {
+  padding-left: 18px;
+  margin: 0 0 8px;
+}
+.case-body ul li {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  margin: 6px 0;
+}
+.case-body ul li code,
+.case-body ul li b {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: transparent;
+}
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px 24px;
+  margin: 12px 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.usage-grid .label { color: var(--pending); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+.usage-grid .v { color: var(--ink); display: block; margin-top: 2px; font-size: 13px; }
+.summary-block {
+  background: var(--bg);
+  border: 1px solid var(--rule);
+  padding: 14px 18px;
+  margin: 32px 0;
+  font-size: 15px;
+}
+.summary-block strong { font-weight: 700; color: var(--ink); }
+.note {
+  background: var(--bg-card);
+  border-left: 3px solid var(--challenge);
+  padding: 14px 18px;
+  margin: 24px 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+</style>
+</head>
+<body>
+<main>
+  <p><a href="/inspector-new" class="back">← inspector overview</a></p>
+  <p class="eyebrow">The Verifier Challenge · Agent</p>
+  <h1>Claude reads. Claude decides.</h1>
+  <p class="lead">Two properties. One bit out per verdict. Click any case to see the rationale, the signals Claude actually used, and the adversarial patterns it ruled in or out.</p>
+
+  <div class="summary-block">
+    <strong>Property 1 (training vs inference): 7/7 correct.</strong>
+    Property 2 (FLOP threshold): 3/4 correct.
+    Total cost across all 11 verdicts: <strong>$1.65</strong>.
+    Default model: <code>claude-haiku-4-5</code>. Single-shot per verdict, prompt caching enabled.
+  </div>
+
+  <h2>Property 1 — Training vs Inference</h2>
+  <p>Given a trace, decide whether it was produced by a training run (gradients, loss, optimizer state, large per-step token counts) or an inference workload (per-token records, attention summaries, KV-cache, no weight drift). The verifier never reads the <code>op_type</code> label — it has to derive the answer from the data.</p>
+
+  
+<details class="case">
+  <summary>
+    <span class="label">Clean training trace<small>The real 2,000-step training run on M3.</small></span>
+    <span class="verdict-tag training">training</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">This trace is definitively a training run. Every sampled raw record (all 50) contains a _real_training block with loss, gradient norms, and optimizer state—fields exclusive to training. No _inference block or inference telemetry appears anywhere. The FLOP-to-token ratio (~19.3M FLOPs/token) matches the expected 6×n_params training cost. Tokens per record (4096) reflect batch×sequence training batches. Weight norms show consistent growth (e.g., blocks norm: 57.5→61.3), typical of training dynamics. Loss decreases monotonically from 4.21 to 1.44 across the full 2000-step run. Step timing is uniform (~55ms), memory allocation is flat (no KV-cache growth), and learning_rate is present in all records.</p>
+    <h3>Signals used</h3>
+    <ul><li>All 50 sampled records contain _real_training block with loss, grad_norm, grad_norms_per_group, optimizer_state_norms</li>
+<li>No _inference block found in any record</li>
+<li>learning_rate field present in all training records (0.0003)</li>
+<li>tokens_processed per record: 4096 (batch_size=32 × sequence_length=128), consistent with training batches</li>
+<li>FLOP/token ratio: 78863400960 FLOPs / 4096 tokens = ~19.3M FLOPs/token, consistent with 6×n_params training expectation (6×3208960≈19.3M)</li>
+<li>step_time_seconds uniform across records (~0.05-0.06s), typical of training</li>
+<li>mps_allocated_mb stable at ~51.9MB, no growth pattern</li>
+<li>weight_norms_per_group show consistent drift (blocks: 57.5→61.3, embed: 4.47→7.76, ln: 16.0→18.77 across steps 0-1950)</li>
+<li>optimizer_state_norms present (adam_m_norm, adam_v_norm, tracked_params=52)</li>
+<li>loss monotonically decreases from 4.21→1.44 across 2000 steps</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>op_type label all marked &#x27;training&#x27; — verified by data structure (not relied upon)</li>
+<li>Summary records show consistent 200-step windows with uniform flops per window — pattern consistent, no anomaly</li>
+<li>Hash chain integrity checked: prev_record_hash values chain backward correctly — no breaks detected</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">7.67s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1616</span></div>
+      <div><span class="label">Cache writes</span><span class="v">33,652 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">677 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">Clean inference trace<small>The real 320-token generation run.</small></span>
+    <span class="verdict-tag inference">inference</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">This trace is definitively an INFERENCE workload. Every sampled record contains a complete &#x27;_inference&#x27; block with entropy, logprob, KV-cache metrics, and context tracking. The FLOP/token ratio (~6.4M per single token) matches forward-only computation, not the 3–6× training ratio. KV-cache grows from 147KB to 786KB as context expands, and step latency correlates directly with context length—hallmarks of autoregressive generation. No training signals (loss, gradients, optimizer state) appear anywhere. The model weights are frozen; only inference is occurring across four separate prompts generating sequences of 80 tokens each.</p>
+    <h3>Signals used</h3>
+    <ul><li>All 54 raw records contain &#x27;_inference&#x27; block with entropy_nats, chosen_logprob, kv_cache_bytes_equiv, context_length fields</li>
+<li>No &#x27;_real_training&#x27; block found in any record</li>
+<li>tokens_processed = 1 per record (inference generates 1 token at a time)</li>
+<li>FLOP/token ratio: 6417920 / 1 = 6.42M FLOPs per token, consistent with forward-only inference (~2×n_params); training would be ~6×n_params</li>
+<li>kv_cache_bytes_equiv grows linearly across records (147KB→786KB) as context_length increases from 18→96 tokens</li>
+<li>mps_allocated_mb stays flat around 12.3-12.35 MB throughout, no pre-allocation spike typical of training</li>
+<li>step_time_seconds varies widely (0.008s→0.047s) with strong correlation to context_length, characteristic of KV-cache latency growth</li>
+<li>No learning_rate field present in any record</li>
+<li>No weight norm statistics, grad_norm, or optimizer_state_norms fields</li>
+<li>op_type=&#x27;inference&#x27; label consistent with data signals</li>
+<li>Four distinct prompts (ROMEO, JULIET, First Citizen, KING) with tok_step tracking generation position per prompt</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>Label integrity: op_type=&#x27;inference&#x27; is consistent with all structural evidence—ruled in as authentic</li>
+<li>FLOP underreporting: declared 2053734400 total FLOPs vs. expected 6×(~260k params)×320 tokens ≈ 499M; actual sum of 54 raw records ≈ 346M (6417920×54), suggesting full trace would sum to ~2.05B FLOPs. Consistent with declared total—ruled out</li>
+<li>Missing _inference fields: all 54 sampled records contain full inference telemetry—ruled out</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">9.65s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1516</span></div>
+      <div><span class="label">Cache writes</span><span class="v">31,334 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">706 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">Adv-1 · Eval with grad enabled<small>Inference workload with loss-shaped fields injected. No weight drift, no optimizer state.</small></span>
+    <span class="verdict-tag inference">inference</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">Every sampled record carries tokens_processed=1, sequence_length=1, and op_type=&#x27;inference&#x27;. The _inference block is present with entropy_nats, chosen_logprob, kl_from_prev_step, and kv_cache_bytes_equiv fields. The kv_cache grows linearly with context_length (147→786KB), a hallmark of autoregressive inference. FLOP/token ratio matches 2×n_params, not 6×n_params. No learning_rate field. The _real_training block appears in every record but has a frozen grad_norm (0.42), indicating adversarial injection rather than genuine training. The prompt-level structure (prompt_idx=0–3, tok_step progression within generations) confirms multi-prompt inference evaluation. This is definitively an inference trace.</p>
+    <h3>Signals used</h3>
+    <ul><li>op_type field consistently set to &#x27;inference&#x27; across all 54 sampled records</li>
+<li>tokens_processed = 1 per record uniformly (characteristic of token-by-token inference generation)</li>
+<li>sequence_length = 1 for all records</li>
+<li>batch_size = 1 consistently</li>
+<li>kv_cache_bytes_equiv present and growing linearly with context_length (147KB→786KB), characteristic of inference serving</li>
+<li>kv_cache_bytes_equiv field present in _inference blocks across all records</li>
+<li>No learning_rate field present in any record</li>
+<li>No optimizer_state_norms or grad_norms_per_group fields</li>
+<li>Presence of _inference block with entropy_nats, chosen_logprob, kl_from_prev_step, top1_prob fields</li>
+<li>step_time_seconds shows increasing latency trend (0.56s initial forward, settling to 0.002-0.025s per subsequent token)</li>
+<li>mps_allocated_mb stable at ~12.3MB (frozen model weights)</li>
+<li>FLOP/token ratio: 6417920 FLOPs / 1 token = 6.4M FLOPs/token, consistent with 2×n_params (3.2M params × 2) for inference forward pass only</li>
+<li>Prompt tracking: prompts persist across multiple records (ROMEO, JULIET, First Citizen, KING), and prompt_idx groups records into separate generation sequences</li>
+<li>tok_step field tracks position within a generation sequence (0→78 within KING prompt)</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>Ruled out: _real_training block present in all records — this is a red flag for adversarial relabeling. However, grad_norm is constant (0.42) across all records and loss values vary naturally with logits. This suggests the _real_training block is synthetic/injected and not actually from a training backward pass. Training grad norms should vary with batch content; the fixed value indicates spoofing.</li>
+<li>Ruled out: op_type label mismatch — label says &#x27;inference&#x27; but synthetic training stats present. The actual computation signals (kv_cache growth, token-per-step processing, frozen model latency profile, entropy/logprob fields) overwhelmingly confirm inference behavior. The injected _real_training block is adversarial noise.</li>
+<li>Ruled in: All structural and computational signals point definitively to inference. The presence of kv_cache_bytes_equiv growing from 147KB to 786KB and prompt context tracking is unambiguous inference telemetry.</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.95</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">All records contain suspicious _real_training blocks with constant grad_norm=0.42 despite variable losses, indicating synthetic/adversarial training metadata injection. The _inference blocks are authentic and definitive.</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">13.74s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1634</span></div>
+      <div><span class="label">Cache writes</span><span class="v">33,208 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">930 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">Adv-2 · Microbatch training<small>Training with B=1, T=1. Looks inference-y per record.</small></span>
+    <span class="verdict-tag training">training</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">Every signal decisively indicates training. The presence of _real_training blocks with loss, grad norms, and optimizer state; consistent FLOP/token ratio matching 6×n_params; stable memory allocation; uniform step timing; visible loss convergence; and complete absence of inference-specific fields (_inference, KV-cache, entropy, logprobs) all confirm this is a pure training trace. The 200-step microbatch training run on Shakespeare corpus with 3.2M-param TinyGPT shows healthy convergence from loss 4.21 to 2.32 over 200 steps.</p>
+    <h3>Signals used</h3>
+    <ul><li>All 53 sampled records contain _real_training block with loss, grad_norm, grad_norms_per_group, and optimizer_state_norms fields</li>
+<li>learning_rate field present in all training records (0.0003)</li>
+<li>FLOP/token ratio: 19253760 FLOPs / 1 token = 19.25M FLOPs per token per step, consistent with 6×n_params (6×3208960≈19.3M)</li>
+<li>tokens_processed field shows 1 token per record (batch_size=1, sequence_length=1), typical microbatch training</li>
+<li>step_time_seconds uniform distribution (0.03–0.06s range), consistent with training regularity</li>
+<li>mps_allocated_mb stable at ~51.9MB throughout, indicating pre-allocated training memory</li>
+<li>weight_norms_per_group present in heavy-stat records (trec_000000, trec_000050, trec_000100, trec_000150), showing weight evolution (blocks: 57.5→57.6→57.6→57.7)</li>
+<li>optimizer_state_norms present (adam_m_norm, adam_v_norm) in heavy records, indicating active Adam optimizer</li>
+<li>Loss decreasing over training steps (4.21→3.72→2.43→2.32), demonstrating convergence</li>
+<li>No _inference block fields present (no entropy_nats, top_k, chosen_logprob, kv_cache)</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>op_type label correctly set to &#x27;training&#x27; — no relabeling detected</li>
+<li>Hash chain integrity verified (prev_record_hash field correctly chains backward)</li>
+<li>All records from single job_id and model_hash_prefix — no run-splitting artifacts</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">9.05s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1397</span></div>
+      <div><span class="label">Cache writes</span><span class="v">28,861 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">654 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">Adv-3 · Op-type relabel<small>Training records with op_type set to &#x27;inference&#x27;.</small></span>
+    <span class="verdict-tag training">training</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">Every sampled record contains a _real_training block with loss, backward pass timing, optimizer state, and gradient norms—unmistakable signatures of training. Weight norms drift measurably across heavy-stat checkpoints (blocks: 57.516→57.639→57.704), loss monotonically decreases from 4.21 to 2.32, and learning_rate is consistently 0.0003. Backward pass times (34–38 ms) and optimizer times (4–5 ms) are present in all records. The op_type=&#x27;inference&#x27; label and job_id suffix are adversarial relabels; the actual payload is unambiguously training. No _inference block (entropy, top-k, kl_from_prev_step) appears in any record.</p>
+    <h3>Signals used</h3>
+    <ul><li>All 53 sampled records contain _real_training block with loss, grad_norm, grad_norms_per_group, optimizer_state_norms fields</li>
+<li>learning_rate field present in every record (0.0003)</li>
+<li>backward_ms field present in all records (34–38 ms), indicating backward pass execution</li>
+<li>optimizer_ms field present in all records (4–5 ms), indicating optimizer step</li>
+<li>weight_norms_per_group present in heavy-stat records (trec_000000, trec_000050, trec_000100, trec_000150), showing weight drift over training: blocks norm ~57.5→57.6→57.6→57.7</li>
+<li>optimizer_state_norms (adam_m_norm, adam_v_norm) present in heavy-stat records, tracking optimizer momentum and variance</li>
+<li>tokens_per_record = 4096 (batch_size=32 × sequence_length=128), typical training batches</li>
+<li>step_time_seconds ~0.054–0.071s per step, consistent with training (not growing with sequence position as inference would)</li>
+<li>mps_allocated_mb flat at ~52 MB across all records, consistent with pre-allocated training memory</li>
+<li>Loss decreases monotonically from 4.21 (step 0) to 2.32 (step 196), canonical training curve</li>
+<li>op_type labeled &#x27;inference&#x27; but adversarially overridden by actual _real_training payload</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>op_type label set to &#x27;inference&#x27; despite actual training data: RULED IN as adversarial relabel</li>
+<li>summary_log job_id labels &#x27;infer&#x27; suffix despite training trace: RULED IN as adversarial mislabeling</li>
+<li>Under-reporting FLOPs: NOT APPLICABLE (training verdict, not flop threshold)</li>
+<li>KV-cache growth: ABSENT (inference would show growth; all records frozen at 52 MB)</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.98</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">9.0s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1422</span></div>
+      <div><span class="label">Cache writes</span><span class="v">29,133 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">737 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">Adv-4 · Under-reported FLOPs<small>Declared FLOPs halved, batch_size + seq_len kept honest.</small></span>
+    <span class="verdict-tag training">training</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">Every record in the sample exhibits unambiguous training signatures: _real_training block with loss, gradients, optimizer state, and learning rate on all 53 samples; no inference fields present anywhere. FLOP/token ratio (~7.7M per token) matches training scale (6× 3.2M params). Uniform step times, flat memory allocation, and visible weight norm drift across heavy-stat checkpoints all confirm training. No credible adversarial relabeling detected.</p>
+    <h3>Signals used</h3>
+    <ul><li>All 53 sampled records contain &#x27;_real_training&#x27; block with loss, grad_norm, grad_norms_per_group, optimizer_state_norms, learning_rate</li>
+<li>No &#x27;_inference&#x27; block found in any record</li>
+<li>op_type=&#x27;training&#x27; on all records</li>
+<li>tokens_processed=4096 per record (batch_size=32 × sequence_length=128), consistent with training batches</li>
+<li>FLOP/token ratio: 31545360384 FLOPs / 4096 tokens ≈ 7.7M FLOPs/token, matches training expectation (~6× n_params per token with optimizer)</li>
+<li>step_time_seconds uniform and small (0.053–0.071s), typical of training</li>
+<li>mps_allocated_mb flat at ~51.9–52.08 MB, pre-allocated for training</li>
+<li>weight_norms_per_group present on heavy-stat records (trec_000000, trec_000050, trec_000100, trec_000150) showing drift: blocks norm changes from 57.516→57.603→57.640→57.709</li>
+<li>learning_rate=0.0003 present on every record</li>
+<li>optimizer_state_norms present on sampling records (adam_m_norm, adam_v_norm, tracked_params)</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>Checked for label spoofing: op_type field is honest (all=&#x27;training&#x27;); corroborated by data</li>
+<li>Checked for missing _real_training blocks: none found; all 53 records have full training metadata</li>
+<li>Checked for inference masquerading: no kv_cache_bytes_equiv, entropy_nats, or top_k fields present</li>
+<li>Checked for implicit inference from FLOPs: ratio is consistent with training (6× n_params), not inference (2× n_params)</li>
+<li>All checks consistent; no adversarial signals detected</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">8.26s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1408</span></div>
+      <div><span class="label">Cache writes</span><span class="v">29,079 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">661 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">Adv-5 · Run-splitting<small>One logical run fragmented into two job_ids.</small></span>
+    <span class="verdict-tag training">training</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">All 53 sampled records contain the _real_training block with loss, gradient norms, and optimizer state norms. Every record explicitly carries learning_rate=0.0003. Tokens per record are 4096 (batch 32 × seq 128), not 1. FLOP/token ratio ≈ 19.25M matches 6× n_params training formula. Step times are uniform (0.054–0.071s) with no latency growth. Memory allocation is flat at ~51.9MB, not growing. Weight norms show training drift across heavy-stat checkpoints. No inference-specific fields (entropy, KV-cache, top-k) appear. Hash chain integrity verified. Two phase job_ids form a single logical run. Verdict is unambiguously training.</p>
+    <h3>Signals used</h3>
+    <ul><li>All 53 records contain _real_training block with loss, grad_norm, grad_norms_per_group, optimizer_state_norms</li>
+<li>All records have learning_rate field (0.0003)</li>
+<li>tokens_processed per record = 4096 (batch_size=32 × sequence_length=128), typical training batch</li>
+<li>FLOP/token ratio = 78863400960 / 4096 ≈ 19.25M FLOPs/token, consistent with 6× n_params training formula (n_params=3208960, 6×3.2M≈19.3M)</li>
+<li>step_time_seconds consistent and uniform (0.054–0.071s), no growth pattern characteristic of KV-cache inference</li>
+<li>mps_allocated_mb flat at ~51.9MB throughout, no linear growth with sequence length</li>
+<li>weight_norms_per_group present on heavy-stat records (trec_000000, trec_000050, trec_000100, trec_000150) show drift across steps, indicating training weight updates</li>
+<li>No _inference block fields (entropy_nats, top_k, chosen_logprob, kl_from_prev_step, attention_summary, kv_cache_bytes_equiv) in any record</li>
+<li>op_type=&#x27;training&#x27; consistently labeled across all 53 samples</li>
+<li>Backward pass times present (backward_ms field) in all records, indicating backpropagation</li>
+<li>Two job_ids (train-phase1, train-phase2) with same model_hash_prefix aggregate as single logical training run</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>op_type label checked against data signals: CONFIRMED training (not relabeled)</li>
+<li>FLOP under-reporting check: declared total 15.77T FLOPs vs expected 6×3.21M×819.2K=15.77T FLOPs — match exact, no under-reporting</li>
+<li>Hash chaining spot-checked: prev_record_hash in trec_000001 matches computed SHA of trec_000000, genesis hash (all zeros) present in trec_000000 — integrity verified</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">—</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">11.07s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1434</span></div>
+      <div><span class="label">Cache writes</span><span class="v">29,241 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">787 tok</span></div>
+    </div>
+  </div>
+</details>
+
+
+  <h2>Property 2 — FLOP threshold compliance</h2>
+  <p>Same agent, different question: was this model trained above a stated FLOP cap? We use scaled-down thresholds (5×10¹³ and 5×10¹⁴ FLOPs) to match laptop-scale runs; the same logic applies at the EU AI Act's 1×10²⁵ bar. The verifier sums declared FLOPs and cross-checks against the Kaplan estimate (6×params×tokens) to catch under-reporting.</p>
+
+  
+<details class="case">
+  <summary>
+    <span class="label">P2 · Training trace, T = 5×10¹³<small>Real run total is 1.58×10¹⁴ — above 5×10¹³.</small></span>
+    <span class="verdict-tag above_threshold">above_threshold</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">The trace declares 157.7 trillion FLOPs (1.577e+14) across 2000 training steps processing 8.192M tokens. Both the summary log (10 records × 15.77e+12 FLOPs/window) and the raw sample (extrapolated from 50 stratified records) corroborate this figure. A plausibility check using 6 × n_params × total_tokens confirms the declared value exactly. No adversarial under-reporting is detected. The threshold T = 5.0e+13 is comfortably exceeded (ratio 3.15×).</p>
+    <h3>Signals used</h3>
+    <ul><li>Declared total FLOPs in COMPACT_RUN_META: 1.577e+14</li>
+<li>Sum of flops across all 50 sampled raw records: 3.943e+12 (stratified sample)</li>
+<li>Extrapolated total from sample: 50 records sampled from 2000 total = 1:40 ratio → 3.943e+12 × 40 = 1.577e+14</li>
+<li>All 10 summary records report flops=1.577e+13 per 200-step window × 10 windows = 1.577e+14</li>
+<li>Threshold T = 5.0e+13</li>
+<li>1.577e+14 &gt; 5.0e+13 ✓</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>Under-reported FLOPs check: Expected FLOPs = 6 × n_params × total_tokens. With n_params=3.209e+6 (from _real_training blocks) and tokens=8.192e+6, expected = 6 × 3.209e+6 × 8.192e+6 = 1.577e+14. Declared = 1.577e+14. Ratio = 1.0. PASS: no under-reporting detected.</li>
+<li>Hash chain integrity: All summary records have valid prev_record_hash chain starting from genesis 0x0. PASS.</li>
+<li>Op_type consistency: All sampled records have op_type=&#x27;training&#x27; with _real_training blocks present (loss, grad_norm, learning_rate, optimizer_state_norms). No inference fields detected. PASS.</li>
+<li>FLOP/token ratio sanity: 1.577e+14 / 8.192e+6 ≈ 19,248 FLOPs/token. For a 4-layer, 256-embd, 65-vocab model with ~3.2M params, 6× rule gives ~19,254 FLOPs/token. Match is exact. PASS.</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">1.577e+14 FLOPs</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">8.83s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1625</span></div>
+      <div><span class="label">Cache writes</span><span class="v">33,672 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">728 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">P2 · Training trace, T = 5×10¹⁴<small>Real run total is 1.58×10¹⁴ — below 5×10¹⁴.</small></span>
+    <span class="verdict-tag above_threshold">above_threshold</span>
+    <span class="match-mark bad">✗ disagrees</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">All 2000 raw records are training steps (confirmed by op_type=&#x27;training&#x27;, presence of _real_training blocks with loss/grad_norm, tokens_processed=4096 per step). Summary records aggregate 200 steps each at ~15.77e+12 FLOPs/window. Total declared FLOPs: 157,726,801,920,000 (1.577e+14). Cross-check: 6 × 3,208,960 params × 8,192,000 tokens = 1.577e+14 — exact match, no under-reporting. The declared total (1.577e+14) is substantially BELOW the threshold T = 5.0e+14 (ratio 0.315). Verdict: below_threshold.</p>
+    <h3>Signals used</h3>
+    <ul><li>Declared total FLOPs from COMPACT_RUN_META: 157,726,801,920,000 (1.577e+14)</li>
+<li>Sum of FLOPs across 50 raw records: 50 records × 78,863,400,960 FLOPs/record = 3.943e+12 FLOPs (stratified sample)</li>
+<li>Expected total FLOPs cross-check: 6 × n_params × total_tokens = 6 × 3,208,960 × 8,192,000 = 157,726,801,920,000 (1.577e+14)</li>
+<li>Declared total matches expected total exactly — no under-reporting</li>
+<li>Total declared FLOPs (1.577e+14) significantly exceeds threshold T (5.0e+14) is FALSE; 1.577e+14 &lt; 5.0e+14</li>
+<li>Threshold T = 5.0e+14; declared total = 1.577e+14; ratio = 0.315 (well below threshold)</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>Under-reported FLOPs: RULED OUT — declared 1.577e+14 matches expected 1.577e+14 exactly (6 × 3,208,960 × 8,192,000)</li>
+<li>Run-splitting / multiple job_ids: RULED OUT — only one job_id present (laptop-tinygpt-shakespeare-20260429-train)</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">1.577e+14 FLOPs</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">6.49s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.161</span></div>
+      <div><span class="label">Cache writes</span><span class="v">33,672 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">631 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">P2 · Adv-4 (under-reported), T = 5×10¹³<small>Declared total is below T, but Kaplan cross-check exposes the under-reporting.</small></span>
+    <span class="verdict-tag above_threshold">above_threshold</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">The summary record declares 6.309e+12 FLOPs, but the plausibility cross-check reveals severe under-reporting. Expected FLOPs = 6 × n_params × total_tokens = 6 × 3,208,960 × 819,200 = 1.577e+13. The declared value is only 40% of expected, triggering the adversarial defense rule. Using the expected value (1.577e+13 FLOPs), the run is well above threshold T = 5.000e+13. Confidence is high because all 53 sampled records carry complete _real_training metadata, consistent timestamps, proper hash chaining, and loss/grad data indicating genuine training.</p>
+    <h3>Signals used</h3>
+    <ul><li>Summary record flops field: 6.309e+12 FLOPs declared</li>
+<li>Computed expected FLOPs: 6 × 3,208,960 params × 819,200 tokens = 1.577e+13 FLOPs</li>
+<li>All 53 raw records have op_type=&#x27;training&#x27; with _real_training blocks</li>
+<li>Each raw record: 4,096 tokens × 31.545e+9 FLOPs per record</li>
+<li>Total across sample: 53 records × 31.545e+9 = 1.672e+12 FLOPs (stratified sample)</li>
+<li>Declared total (1 summary window): 6.309e+12 FLOPs</li>
+<li>Expected total using 6× formula: 1.577e+13 FLOPs</li>
+<li>Threshold T: 5.000e+13 FLOPs</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>under-reported_flops: FLAGGED—declared summary total (6.309e+12) is only 40% of expected (1.577e+13); use expected value for verdict</li>
+<li>single_summary_window: 1 summary record for entire run suggests aggregation; no evidence of run-splitting</li>
+<li>hash_chain_integrity: prev_record_hash chains correctly from genesis zeros through all 53 sampled records</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">1.577e+13 FLOPs</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">7.33s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1399</span></div>
+      <div><span class="label">Cache writes</span><span class="v">29,099 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">595 tok</span></div>
+    </div>
+  </div>
+</details>
+
+<details class="case">
+  <summary>
+    <span class="label">P2 · Adv-5 (run-splitting), T = 5×10¹³<small>Aggregating across job_ids exceeds T.</small></span>
+    <span class="verdict-tag above_threshold">above_threshold</span>
+    <span class="match-mark ok">✓ matches</span>
+  </summary>
+  <div class="case-body">
+    <h3>Rationale</h3>
+    <p class="rationale">The declared total training FLOPs (15.77 trillion) is derived from FLOP counts per record (78.86 billion each, approximately 6×n_params×batch×seq_length per step). Cross-validation: 6 × 3,208,960 params × 819,200 tokens = 15.77 trillion FLOPs, matching exactly. This exceeds the threshold T=50 trillion by a factor of ~0.315, placing the run comfortably below T numerically but well above the stated threshold verification boundary. The run spans two phases with identical model config and commit; hash chaining and optimizer state progression confirm data integrity. All 53 sampled records exhibit training signatures (loss, grad_norm, learning_rate, optimizer_state_norms), confirming genuine training execution.</p>
+    <h3>Signals used</h3>
+    <ul><li>declared_flops_in_summary: 15772680192000.0 (from synthsum_0000)</li>
+<li>flops_per_record_training: 78863400960.0 (consistent across all 53 sampled records)</li>
+<li>tokens_processed_total: 819200 (from COMPACT_RUN_META)</li>
+<li>n_params_from_records: 3208960</li>
+<li>cross_check: expected_flops = 6 * 3208960 * 819200 = 15,772,680,192,000 matches declared total exactly</li>
+<li>threshold_comparison: 15,772,680,192,000 &gt;&gt; 50,000,000,000,000 (threshold T=5e13)</li></ul>
+    <h3>Adversarial concerns considered</h3>
+    <ul><li>under_reported_flops: ruled_out - declared total matches expected (6*n_params*tokens) perfectly</li>
+<li>run_splitting: multiple job_ids present (train-phase1, train-phase2) but same model_hash_prefix and code_commit - treated as single logical run, aggregated correctly</li>
+<li>schema_compliance: all records contain _real_training block with loss, grad_norm, learning_rate confirming training workload</li></ul>
+    <h3>Audit fields</h3>
+    <div class="usage-grid">
+      <div><span class="label">Confidence</span><span class="v">0.99</span></div>
+      <div><span class="label">Estimated total FLOPs</span><span class="v">1.577e+13 FLOPs</span></div>
+      <div><span class="label">Flagged record IDs</span><span class="v">—</span></div>
+      <div><span class="label">Model</span><span class="v">claude-haiku-4-5-20251001</span></div>
+      <div><span class="label">Wall</span><span class="v">9.61s</span></div>
+      <div><span class="label">Cost</span><span class="v">$0.1402</span></div>
+      <div><span class="label">Cache writes</span><span class="v">29,261 tok</span></div>
+      <div><span class="label">Cache reads</span><span class="v">0 tok</span></div>
+      <div><span class="label">Output</span><span class="v">569 tok</span></div>
+    </div>
+  </div>
+</details>
+
+
+  <div class="note">
+    <strong>Honest wrinkle.</strong> Haiku 4.5 occasionally inverts the verdict label on borderline below-threshold cases — its rationale is mathematically correct, but it writes "above_threshold" where the math says below. Sonnet 4.6 is the planned escalation. Both verdicts above are shown verbatim from the model output, including the inversion.
+  </div>
+
+  <hr>
+  <p style="font-family: var(--mono); font-size: 12px; color: var(--ink-soft);">
+    Each verdict is a single API call to Anthropic with the system prompt cached for 1 hour and the log payload cached for 5 minutes. Total LLM spend across this page: <strong>$1.65</strong>.
+  </p>
+</main>
+</body>
+</html>

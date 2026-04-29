@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One record per chip per minute — Inspector MVP</title>
+<style>
+:root {
+  --bg: #f7f4ec; --bg-card: #ffffff; --ink: #1c1a17; --ink-soft: #5e574e;
+  --rule: #e6dfd1; --good: #1f6b3a; --bad: #8a1d1d; --challenge: #b83232;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.65; }
+main { max-width: 720px; margin: 0 auto; padding: 56px 28px 96px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--challenge); margin-bottom: 12px; }
+h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; }
+h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; margin: 56px 0 16px; }
+h3 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin: 28px 0 10px; }
+p { margin: 0 0 16px; }
+.lead { color: var(--ink-soft); font-size: 18px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 56px 0; }
+a { color: var(--challenge); text-decoration: none; border-bottom: 1px solid currentColor; }
+a:hover { color: var(--ink); }
+.back { font-family: var(--mono); font-size: 13px; margin-bottom: 32px; display: inline-block; }
+pre.record { background: var(--bg-card); border: 1px solid var(--rule); padding: 16px 18px; font-family: var(--mono); font-size: 12px; line-height: 1.55; overflow-x: auto; white-space: pre-wrap; }
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--rule);
+}
+.tab {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  padding: 10px 14px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  color: var(--ink-soft);
+  margin-bottom: -1px;
+}
+.tab.active { color: var(--challenge); border-bottom-color: var(--challenge); }
+.field-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.field-table th, .field-table td { border-top: 1px solid var(--rule); padding: 12px 6px; vertical-align: top; text-align: left; }
+.field-table th { font-family: var(--mono); font-weight: 600; font-size: 12px; color: var(--ink); width: 200px; padding-right: 14px; }
+.field-table td { color: var(--ink-soft); }
+.note { background: var(--bg-card); border-left: 3px solid var(--challenge); padding: 14px 18px; margin: 24px 0; font-size: 15px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<main>
+<p><a href="/inspector-new" class="back">← inspector overview</a></p>
+<p class="eyebrow">The Verifier Challenge · Schema</p>
+<h1>One record per chip per minute.</h1>
+<p class="lead">Twelve identity fields, a hash chain, and a nested block of step- or token-level telemetry. The verifier reads only the records and a public commitment.</p>
+
+<h2>Two streams</h2>
+<p>Every run writes <strong>two log streams</strong> — both schema-compliant, both hash-chained.</p>
+<ul>
+  <li><strong>Summary log</strong>: one record per ~200-step window (laptop scale; the schema's frontier-scale unit is one 60-second wall-time window). Aggregates FLOPs, tokens, and counts. Tiny — typically &lt;50 KB for an entire run.</li>
+  <li><strong>Raw trace</strong>: one record per training step (training) or per generated token (inference). Carries everything we'd want to see in court — loss, gradient norms, optimizer state, attention summaries, system telemetry. Bigger — typically a few MB.</li>
+</ul>
+
+<div class="tabs" role="tablist">
+  <button class="tab active" data-target="raw" role="tab">Raw record · training</button>
+  <button class="tab" data-target="inf" role="tab">Raw record · inference</button>
+  <button class="tab" data-target="summary" role="tab">Summary record</button>
+</div>
+
+<pre class="record" id="raw">{
+  "record_id": "trec_001500",
+  "prev_record_hash": "9f4a…7b1e",
+  "chip_id": "macbook-m3-mps-0",
+  "job_id": "laptop-tinygpt-shakespeare-20260429-train",
+  "operator": "jason-laptop",
+  "cluster_region": "local-mps",
+  "window_start": "2026-04-29T05:24:00Z",
+  "window_end":   "2026-04-29T05:24:01Z",
+  "op_type": "training",
+  "flops": 7.886e+10,
+  "tokens_processed": 4096,
+  "batch_size": 32,
+  "sequence_length": 128,
+  "steps_in_window": 1,
+  "model_hash_prefix": "sha256:546a946947ee7117",
+  "dataset_fingerprint": "sha256:e8a3…",
+  "code_commit": "git:faf147f",
+  "config_hash": "sha256:1a02…",
+  "_real_training": {
+    "step": 1500,
+    "loss": 1.624,
+    "grad_norm": 0.872,
+    "grad_norms_per_group": { "embed": 0.55, "blocks": 0.66, "head": 0.0, "ln": 0.04 },
+    "data_load_ms": 7.2, "forward_ms": 13.8, "backward_ms": 19.4, "optimizer_ms": 12.1,
+    "step_time_seconds": 0.054,
+    "tokens_per_second": 75850,
+    "learning_rate": 3e-4,
+    "telemetry": { "process_rss_mb": 372, "mps_allocated_mb": 84, "system_load_1m": 1.2 },
+    "weight_norms_per_group": { "embed": 6.2, "blocks": 41.1, "head": 0.0, "ln": 1.4 },
+    "optimizer_state_norms": { "adam_m_norm": 0.0034, "adam_v_norm": 7.8e-7, "tracked_params": 52 }
+  }
+}</pre>
+
+<pre class="record" id="inf" hidden>{
+  "record_id": "irec_000041",
+  "prev_record_hash": "62c7…df90",
+  "chip_id": "macbook-m3-mps-0",
+  "job_id": "laptop-tinygpt-shakespeare-20260429-infer",
+  "operator": "jason-laptop",
+  "cluster_region": "local-mps",
+  "op_type": "inference",
+  "flops": 6.418e+06,
+  "tokens_processed": 1,
+  "batch_size": 1,
+  "sequence_length": 1,
+  "_inference": {
+    "prompt_idx": 0,
+    "tok_step": 41,
+    "sampled_token_id": 23,
+    "sampled_token": "h",
+    "chosen_logprob": -1.802,
+    "entropy_nats": 1.74,
+    "top1_prob": 0.412,
+    "kl_from_prev_step": 0.073,
+    "kv_cache_bytes_equiv": 245760,
+    "context_length": 60,
+    "forward_seconds": 0.0085,
+    "tokens_per_second": 117.3,
+    "attention_summary": {
+      "layers": [
+        { "layer": 0, "heads": [
+            { "entropy_nats": 1.92, "top_keys": [{"pos": 59, "prob": 0.31},
+                                                  {"pos": 7,  "prob": 0.19}] },
+            ...
+        ] }
+      ]
+    }
+  }
+}</pre>
+
+<pre class="record" id="summary" hidden>{
+  "record_id": "tsum_0007",
+  "prev_record_hash": "d18b…a4f2",
+  "chip_id": "macbook-m3-mps-0",
+  "job_id": "laptop-tinygpt-shakespeare-20260429-train",
+  "operator": "jason-laptop",
+  "cluster_region": "local-mps",
+  "window_start": "2026-04-29T05:24:00Z",
+  "window_end":   "2026-04-29T05:24:11Z",
+  "op_type": "training",
+  "flops": 1.577e+13,
+  "tokens_processed": 819200,
+  "batch_size": 32,
+  "sequence_length": 128,
+  "steps_in_window": 200,
+  "model_hash_prefix": "sha256:546a946947ee7117",
+  "dataset_fingerprint": "sha256:e8a3…",
+  "code_commit": "git:faf147f",
+  "config_hash": "sha256:1a02…",
+  "data_source_tags": ["corpus:tiny-shakespeare"]
+}</pre>
+
+<h2>Field-by-field</h2>
+<table class="field-table">
+<tr><th>record_id</th><td>Unique ID for this record. Monotonic across the run.</td></tr>
+<tr><th>prev_record_hash</th><td>SHA-256 of the previous record's canonical JSON. Tampering with any earlier record breaks every later record's hash check. The chain restarts at all-zeros for each run.</td></tr>
+<tr><th>chip_id</th><td>Identifier for the physical chip producing this record. Same on training and inference (forced parity for the verifier).</td></tr>
+<tr><th>job_id</th><td>Logical training/inference job. The verifier groups records by job_id.</td></tr>
+<tr><th>operator</th><td>The team or principal running the job.</td></tr>
+<tr><th>cluster_region</th><td>Datacenter region. <code>local-mps</code> for the laptop.</td></tr>
+<tr><th>op_type</th><td><code>training</code> | <code>inference</code> | <code>eval</code> | <code>idle</code>. Self-declared. The verifier cross-checks against record content.</td></tr>
+<tr><th>flops</th><td>Floating-point operations performed in this window or this step. For training we use the Kaplan approximation: 6 × params × tokens.</td></tr>
+<tr><th>tokens_processed</th><td>Tokens processed in this window. Training: <code>batch_size × sequence_length × steps</code>. Inference: 1 per generated token.</td></tr>
+<tr><th>batch_size, sequence_length</th><td>Architectural reference. Used for the FLOP/token ratio and the Kaplan plausibility cross-check.</td></tr>
+<tr><th>model_hash_prefix</th><td>SHA-256 prefix of the model's parameters. Identifies the exact model being trained or served. Constant within a job.</td></tr>
+<tr><th>dataset_fingerprint</th><td>SHA-256 prefix of the training data. Detects silent dataset substitution.</td></tr>
+<tr><th>code_commit, config_hash</th><td>Git commit and SHA-256 of the training config. Pin the run to a specific code state.</td></tr>
+<tr><th>upstream_refs, data_source_tags</th><td>Provenance — record IDs this record depends on, and corpus tags.</td></tr>
+<tr><th>_real_training</th><td>Per-step nested block (only on training records). Contains <code>loss</code>, <code>grad_norm</code>, <code>grad_norms_per_group</code>, latency breakdown, system telemetry, and heavy stats every 50 steps (weight norms, Adam state, top-5 tensor stats).</td></tr>
+<tr><th>_inference</th><td>Per-token nested block (only on inference records). Contains <code>entropy_nats</code>, <code>top_k</code> logits, <code>chosen_logprob</code>, <code>kv_cache_bytes_equiv</code>, <code>kl_from_prev_step</code>, and an <code>attention_summary</code> with per-layer per-head entropy and top attended positions.</td></tr>
+</table>
+
+<h2>The hash chain</h2>
+<p>Each record's <code>prev_record_hash</code> is the SHA-256 of the previous record's canonical JSON (sorted keys, no whitespace). The chain restarts at <code>0…0</code> at the start of each run. Tampering with any record breaks every record after it. The verifier validates the chain in a single linear pass before reading any of the values.</p>
+
+<div class="note">
+  <strong>What's not on this page.</strong> Multi-host gradient sync, DCGM tensor-core utilization, per-GPU power draw, hardware attestation. These are real and important — and absent. <a href="/inspector-new/frontier-gap">The honest accounting →</a>
+</div>
+
+<hr>
+<p><a href="/inspector-new/agent">→ See Claude reading these logs</a></p>
+
+<script>
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('pre.record').forEach(p => p.hidden = true);
+    document.getElementById(tab.dataset.target).hidden = false;
+  });
+});
+</script>
+</main>
+</body>
+</html>

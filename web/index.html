@@ -222,13 +222,14 @@
     <li><span class="status done">done</span><div class="body"><strong>Inference run</strong><span>320 records (4 prompts × 80 tokens) in 9.5s. Per-token logits, top-10, attention summaries, KL divergence.</span></div></li>
     <li><span class="status done">done</span><div class="body"><strong>Scaffolded Claude verifier</strong><span>Anthropic SDK + prompt caching. Property 1 (training vs inference): <strong style="color:var(--good)">7 of 7 correct</strong> across clean + 5 adversarial cases.</span></div></li>
     <li><span class="status done">done</span><div class="body"><strong>5 adversarial trace variants</strong><span>Eval-with-grad masquerade, microbatch-training, op-type relabel, under-reported FLOPs, run-splitting across job_ids. All 5 caught.</span></div></li>
-    <li><span class="status active">in&nbsp;progress</span><div class="body"><strong>Static site (5 pages)</strong><span>Landing · /training · /logs · /agent · /about.</span></div></li>
-    <li><span class="status pending">next</span><div class="body"><strong>Cutover /inspector-new → /inspector</strong><span>Existing v1 preserved at /inspector-old.</span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>Sub-pages live</strong><span>Landing · <a href="/inspector-new/snapshot">/snapshot</a> · <a href="/inspector-new/agent">/agent</a> · <a href="/inspector-new/logs">/logs</a> · <a href="/inspector-new/frontier-gap">/frontier-gap</a>.</span></div></li>
+    <li><span class="status pending">queued</span><div class="body"><strong>Cutover /inspector-new → /inspector</strong><span>Existing v1 preserved at /inspector-old.</span></div></li>
   </ul>
 
   <h2>What this is</h2>
   <p>The Verifier Challenge — the project Jason Hausenloy and Jasmine Li are proposing — is the DARPA-Grand-Challenge equivalent for AI verification: an open, global competition to build the best system for inferring what's running inside a datacenter from its logs.</p>
   <p>This MVP is the worked example. We trained a small but real GPT on a MacBook, captured the rawest logs we honestly can on Apple Silicon, and built a Claude agent that reads them. No deterministic rule engine, no cheat sheet — just structured prompting and the trace.</p>
+  <p style="font-family: var(--mono); font-size: 14px;">→ <a href="/inspector-new/snapshot">Pause-and-show snapshot</a> · <a href="/inspector-new/logs">The schema</a> · <a href="/inspector-new/agent">Claude reading the logs</a> · <a href="/inspector-new/frontier-gap">Honest limits</a></p>
 
   <h2>What this isn't</h2>
   <p>One chip. Single host. No DCGM, no NVLink, no per-GPU power, no multi-host gradient sync. The laptop demo is the proof of concept; closing the gap to frontier verification is what the Challenge funds. <a href="/inspector-new/frontier-gap">The honest accounting of what's missing →</a></p>
@@ -258,13 +259,14 @@
   <p style="font-size:15px;color:var(--ink-soft);"><em>One known wrinkle:</em> Haiku 4.5 occasionally inverts the verdict label on borderline below-threshold cases (the math in its rationale is right; the final label flips). Sonnet 4.6 is the planned escalation when shared-OAuth rate limits clear.</p>
 
   <ul class="timeline" id="timeline">
-    <li class="now"><time>now</time> Verdict matrix complete. Building the static site next.</li>
-    <li><time>+12s</time> Adversarial verifier runs: P1 = 7/7, P2 = 4/4 (after one Haiku inversion).</li>
-    <li><time>+5s</time> Synthesized 5 adversarial trace variants from the real run.</li>
-    <li><time>+9.5s</time> Inference complete. 320 records, 4 Shakespeare-shaped completions, 2.05e9 FLOPs total.</li>
-    <li><time>+116s</time> Training complete. 2,000 records. Loss 4.21 → ~1.6.</li>
-    <li><time>+12s</time> Snapshot HTML rendered at step 200.</li>
-    <li><time>+0s</time> Training started on M3 MPS. ~50 steps/sec.</li>
+    <li class="now"><time>now</time> Five sub-pages live. Cutover from /inspector-new to /inspector queued.</li>
+    <li><time>—</time> Schema walkthrough at <a href="/inspector-new/logs">/logs</a>; honest limits at <a href="/inspector-new/frontier-gap">/frontier-gap</a>.</li>
+    <li><time>—</time> Per-case verdict viewer at <a href="/inspector-new/agent">/agent</a> — every rationale and signal Claude used.</li>
+    <li><time>—</time> Adversarial verifier runs: P1 = 7/7, P2 = 4/4 (one Haiku inversion documented).</li>
+    <li><time>—</time> Synthesized 5 adversarial trace variants from the real run.</li>
+    <li><time>—</time> Inference complete. 320 records, 4 Shakespeare-shaped completions.</li>
+    <li><time>—</time> Training complete. 2,000 records. Loss 4.21 → ~1.6.</li>
+    <li><time>—</time> Snapshot HTML rendered at step 200.</li>
     <li><time>before</time> Repo scaffolded, schema designed, model implemented (3.21M params).</li>
   </ul>
 

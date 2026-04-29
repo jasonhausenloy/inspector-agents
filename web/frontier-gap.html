@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What this can't show — Inspector MVP</title>
+<style>
+:root {
+  --bg: #f7f4ec; --bg-card: #ffffff; --ink: #1c1a17; --ink-soft: #5e574e;
+  --rule: #e6dfd1; --good: #1f6b3a; --bad: #8a1d1d; --challenge: #b83232;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 17px; line-height: 1.65; }
+main { max-width: 720px; margin: 0 auto; padding: 56px 28px 96px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--challenge); margin-bottom: 12px; }
+h1 { font-family: var(--serif); font-weight: 500; font-size: clamp(34px, 5vw, 48px); line-height: 1.05; margin: 0 0 12px; }
+h2 { font-family: var(--serif); font-weight: 500; font-size: 26px; margin: 56px 0 16px; }
+h3 { font-family: var(--sans); font-weight: 600; font-size: 17px; margin: 28px 0 8px; }
+p { margin: 0 0 16px; }
+.lead { color: var(--ink-soft); font-size: 18px; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 56px 0; }
+a { color: var(--challenge); text-decoration: none; border-bottom: 1px solid currentColor; }
+a:hover { color: var(--ink); }
+.back { font-family: var(--mono); font-size: 13px; margin-bottom: 32px; display: inline-block; }
+ul { padding-left: 22px; }
+ul li { margin: 6px 0; line-height: 1.5; }
+.note { background: var(--bg-card); border-left: 3px solid var(--challenge); padding: 14px 18px; margin: 24px 0; font-size: 15px; color: var(--ink-soft); }
+strong { font-weight: 700; color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+<p><a href="/inspector-new" class="back">← inspector overview</a></p>
+<p class="eyebrow">The Verifier Challenge · Honest limits</p>
+<h1>What this can't show yet.</h1>
+<p class="lead">A single-chip laptop run is the wrong scale to verify a frontier model. The architecture is the same; the gap is real and the Verifier Challenge funds closing it.</p>
+
+<h2>What we capture honestly</h2>
+<p>Per training step on a MacBook M3:</p>
+<ul>
+  <li>Loss, gradient norms (total + per parameter group), optimizer state norms (AdamW first and second moments), and per-50-step weight norms.</li>
+  <li>Latency decomposition: data-load, forward, backward, optimizer step.</li>
+  <li>System telemetry: process RSS, CPU load, MPS-allocated memory, system load average.</li>
+  <li>Top-5 largest tensors with min/max/mean/std distribution snapshots, every 50 steps.</li>
+  <li>Token IDs sampled every 100 steps so the verifier can prove the trace is using the declared dataset.</li>
+  <li>SHA-256 hash chain across all records.</li>
+</ul>
+<p>Per generated inference token:</p>
+<ul>
+  <li>Sampled token ID and string.</li>
+  <li>Full top-10 logits with probabilities, plus entropy and top-1 probability across the entire vocab.</li>
+  <li>KL divergence from the previous step's distribution.</li>
+  <li>Per-layer per-head attention summary: entropy and the top-3 attended key positions for the last query position.</li>
+  <li>KV-cache size equivalent, context length, latency breakdown.</li>
+</ul>
+
+<h2>What's missing — and what would close the gap</h2>
+
+<h3>Per-chip telemetry that NVIDIA exposes and Apple Silicon doesn't</h3>
+<ul>
+  <li><strong>DCGM-style tensor-core utilization.</strong> NVIDIA chips expose <code>SM_ACTIVE</code>, <code>PIPE_TENSOR_ACTIVE</code>, and <code>MEM_COPY_UTIL</code> as first-class counters. Apple Silicon does not. A frontier verifier would use these to detect <em>shadow compute</em> (chip running a parallel job during another job's idle slots).</li>
+  <li><strong>Per-GPU power draw.</strong> Frontier datacenters log W and J directly. We don't.</li>
+  <li><strong>Thermal headroom and clock-frequency throttling.</strong> Used to detect off-spec workloads.</li>
+  <li><strong>ECC error counters.</strong> Used to detect tampering with hardware state.</li>
+</ul>
+
+<h3>Multi-host coordination signals that don't exist on a single chip</h3>
+<ul>
+  <li><strong>All-reduce latency for gradient sync.</strong> Frontier training spreads each step across hundreds of GPUs and synchronizes gradients. The latency profile of those all-reduces is one of the strongest signals that a workload is <em>actually</em> training.</li>
+  <li><strong>Pipeline-parallel bubble time.</strong> Indicates the model size is genuinely larger than one chip can hold.</li>
+  <li><strong>Per-rank loss and gradient norms across hundreds of ranks.</strong> Stragglers, divergent ranks, restarts.</li>
+  <li><strong>Network fabric counters.</strong> InfiniBand RDMA, NVLink utilization, link errors.</li>
+</ul>
+
+<h3>Content detail we sample, not stream</h3>
+<ul>
+  <li>We capture top-5 tensor stats every 50 steps. Frontier verification wants every tensor every step.</li>
+  <li>We capture activation statistics only for the last query position in inference. Frontier wants per-layer activation distributions for all positions.</li>
+  <li>We capture gradient norms only — not gradient histograms. Histograms catch attacks where a lab forges grad norms but can't fake the distribution shape.</li>
+</ul>
+
+<h3>Cryptographic attestation</h3>
+<ul>
+  <li>Our hash chain is content-only — it proves the records weren't tampered with after writing, but not that they faithfully reflect the workload that ran. Frontier verification needs <strong>hardware attestation</strong> (signed by the GPU) that the loaded data hashes to the declared <code>dataset_fingerprint</code> and the loaded weights hash to the declared <code>model_hash_prefix</code>.</li>
+  <li>That requires either NVIDIA Confidential Computing-style attested execution, or a TPM-style trusted boot path, neither of which we exercise here.</li>
+</ul>
+
+<h2>What this means for the Challenge</h2>
+<p>The single-chip MVP proves the architecture works at one chip: a real GPT, a schema-compliant log, a Claude verifier that catches every adversarial mutation we hand-built. That is the proof of concept. The Verifier Challenge funds the work that closes the items above — which is most of what makes large-scale verification hard.</p>
+
+<div class="note">
+  <strong>The honest framing.</strong> On a per-chip basis, our trace captures roughly 70-80% of what an auditor would want. On a multi-host basis, perhaps 10%. On per-tensor / per-layer content detail, perhaps 30%. Each gap is a Challenge research direction.
+</div>
+
+<hr>
+<p><a href="/inspector-new">← inspector overview</a></p>
+</main>
+</body>
+</html>
