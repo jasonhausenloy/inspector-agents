@@ -8,6 +8,13 @@ wheels/
 
 # Virtual environments
 .venv
+gpu-runs/.env
+
+# gpu-runs scratch (large, host-specific; pushed to HF Datasets, not git)
+gpu-runs/output/
+gpu-runs/output_smoke/
+gpu-runs/data/
+gpu-runs/wandb/
 
 # Ephemeral state (resume files, run logs) — NOT published
 *.log
