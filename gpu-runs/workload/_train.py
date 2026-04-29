@@ -24,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import TokenDataset
 from model import GPT
 
+STOP_CHECK_EVERY = 5  # iters between synchronized stop checks (cheap all-reduce)
+
 
 def stable_seed(s: str) -> int:
     return int(hashlib.sha256(s.encode()).hexdigest()[:8], 16)
@@ -150,11 +152,28 @@ def run(mode: str) -> None:
 
     t_start = time.time()
     model.train()
-    while iter_num < args.max_iters and not should_stop["flag"]:
-        if args.duration_s is not None and (time.time() - t_start) >= args.duration_s:
-            if rank == 0:
-                print(f"hit --duration_s={args.duration_s}, stopping", flush=True)
-            break
+    stop_t = torch.zeros(1, dtype=torch.int32, device=device) if world_size > 1 else None
+    while iter_num < args.max_iters:
+        # Synchronized stop check: every rank votes; if any rank wants to stop,
+        # all stop together. Without this, ranks self-stop on time.time() at
+        # different iters and the trailing rank deadlocks NCCL backward against
+        # rank 0 sitting at dist.barrier().
+        if iter_num % STOP_CHECK_EVERY == 0:
+            local_stop = int(
+                should_stop["flag"]
+                or (args.duration_s is not None and (time.time() - t_start) >= args.duration_s)
+            )
+            if world_size > 1:
+                stop_t.fill_(local_stop)
+                dist.all_reduce(stop_t, op=dist.ReduceOp.MAX)
+                global_stop = int(stop_t.item())
+            else:
+                global_stop = local_stop
+            if global_stop:
+                if rank == 0:
+                    why = "signal" if should_stop["flag"] else f"--duration_s={args.duration_s}"
+                    print(f"stopping ({why}) at iter {iter_num}", flush=True)
+                break
 
         lr = lr_at(iter_num, args.lr, lr_schedule, args.max_iters,
                    args.warmup_iters, args.min_lr_ratio)
