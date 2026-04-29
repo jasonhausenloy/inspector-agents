@@ -6,6 +6,10 @@ their own 2×H100 pod, concurrently. They share the network volume at
 tokenized datasets prepared on host 1 are already there. `RUNPOD_POD_ID`
 segregates each host's output dir.
 
+**Jasmine is asleep — run this autonomously.** Don't ask for approval; just
+do the pre-flight, launch, and react to failures intelligently. The host 1
+Claude is also running autonomously and monitoring its own run. Match that.
+
 See `gpu-runs/README.md` for the schedule and rationale, and
 `gpu-runs/CLAUDE.md` for the operational details host 1 already worked through
 (DCGM unprivileged → NVLink TX/RX = N/A, chronyd unavailable → null
