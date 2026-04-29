@@ -98,23 +98,53 @@ Verdict policy: pick the verdict matching the strongest signal. Set
 """
 
 
-def stratified_sample(records: list[dict], target_count: int = 200) -> list[dict]:
+_THIN_DROP_TRAINING = {"sample_input_ids", "sample_target_ids", "param_stats_top5"}
+_THIN_DROP_INFERENCE = {"top_k", "ctx_text_tail", "attention_summary"}
+
+
+def thin_record(record: dict) -> dict:
+    """Strip large but-low-signal fields from a record before sending to Claude.
+
+    Keeps every identity field, every aggregate (flops, tokens, batch, etc.),
+    and the discriminative presence-of fields the verifier needs (loss,
+    grad_norm, optimizer_state_norms, entropy_nats, kv_cache_bytes_equiv,
+    learning_rate). Drops bulky low-signal fields (token IDs, full top-k,
+    per-tensor stats), keeping ONE attention summary out of every 5 inference
+    records so the signal is still legible.
+    """
+    out = {k: v for k, v in record.items() if not k.startswith("_")}
+    if "_real_training" in record:
+        rt = dict(record["_real_training"])
+        for k in _THIN_DROP_TRAINING:
+            rt.pop(k, None)
+        # Keep weight_norms_per_group + optimizer_state_norms (high signal).
+        out["_real_training"] = rt
+    if "_inference" in record:
+        inf = dict(record["_inference"])
+        # Keep top1_prob, entropy_nats, chosen_logprob, kv_cache_bytes_equiv;
+        # drop the bulky list of top_k tokens.
+        for k in _THIN_DROP_INFERENCE:
+            inf.pop(k, None)
+        out["_inference"] = inf
+    return out
+
+
+def stratified_sample(records: list[dict], target_count: int = 60) -> list[dict]:
     """Pick ~target_count records spread across the run, plus all heavy-stats records.
 
     Heavy-stats records are the ones with `_real_training.weight_norms_per_group`
-    populated — emitted every 50 steps.
+    populated — emitted every 50 steps. These contain signal the verifier needs
+    (weight drift), so they're always included.
     """
     if len(records) <= target_count:
-        return records
-    # Always include heavy-stat records
+        return [thin_record(r) for r in records]
     heavy = [r for r in records if "_real_training" in r and "weight_norms_per_group" in r["_real_training"]]
     heavy_ids = {r["record_id"] for r in heavy}
-    # Stride-sample the rest
     remaining = [r for r in records if r["record_id"] not in heavy_ids]
     stride = max(1, len(remaining) // max(target_count - len(heavy), 1))
     sampled = remaining[::stride]
     out = sorted(heavy + sampled, key=lambda r: r["record_id"])
-    return out
+    return [thin_record(r) for r in out]
 
 
 def build_user_message(

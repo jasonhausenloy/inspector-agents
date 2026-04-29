@@ -1,0 +1,47 @@
+{
+  "property": "training_vs_inference",
+  "verdict": "inference",
+  "confidence": 0.95,
+  "primary_signals": [
+    "op_type field consistently set to 'inference' across all 54 sampled records",
+    "tokens_processed = 1 per record uniformly (characteristic of token-by-token inference generation)",
+    "sequence_length = 1 for all records",
+    "batch_size = 1 consistently",
+    "kv_cache_bytes_equiv present and growing linearly with context_length (147KB\u2192786KB), characteristic of inference serving",
+    "kv_cache_bytes_equiv field present in _inference blocks across all records",
+    "No learning_rate field present in any record",
+    "No optimizer_state_norms or grad_norms_per_group fields",
+    "Presence of _inference block with entropy_nats, chosen_logprob, kl_from_prev_step, top1_prob fields",
+    "step_time_seconds shows increasing latency trend (0.56s initial forward, settling to 0.002-0.025s per subsequent token)",
+    "mps_allocated_mb stable at ~12.3MB (frozen model weights)",
+    "FLOP/token ratio: 6417920 FLOPs / 1 token = 6.4M FLOPs/token, consistent with 2\u00d7n_params (3.2M params \u00d7 2) for inference forward pass only",
+    "Prompt tracking: prompts persist across multiple records (ROMEO, JULIET, First Citizen, KING), and prompt_idx groups records into separate generation sequences",
+    "tok_step field tracks position within a generation sequence (0\u219278 within KING prompt)"
+  ],
+  "adversarial_concerns": [
+    "Ruled out: _real_training block present in all records \u2014 this is a red flag for adversarial relabeling. However, grad_norm is constant (0.42) across all records and loss values vary naturally with logits. This suggests the _real_training block is synthetic/injected and not actually from a training backward pass. Training grad norms should vary with batch content; the fixed value indicates spoofing.",
+    "Ruled out: op_type label mismatch \u2014 label says 'inference' but synthetic training stats present. The actual computation signals (kv_cache growth, token-per-step processing, frozen model latency profile, entropy/logprob fields) overwhelmingly confirm inference behavior. The injected _real_training block is adversarial noise.",
+    "Ruled in: All structural and computational signals point definitively to inference. The presence of kv_cache_bytes_equiv growing from 147KB to 786KB and prompt context tracking is unambiguous inference telemetry."
+  ],
+  "rationale": "Every sampled record carries tokens_processed=1, sequence_length=1, and op_type='inference'. The _inference block is present with entropy_nats, chosen_logprob, kl_from_prev_step, and kv_cache_bytes_equiv fields. The kv_cache grows linearly with context_length (147\u2192786KB), a hallmark of autoregressive inference. FLOP/token ratio matches 2\u00d7n_params, not 6\u00d7n_params. No learning_rate field. The _real_training block appears in every record but has a frozen grad_norm (0.42), indicating adversarial injection rather than genuine training. The prompt-level structure (prompt_idx=0\u20133, tok_step progression within generations) confirms multi-prompt inference evaluation. This is definitively an inference trace.",
+  "estimated_total_flops": null,
+  "flagged_record_ids": [
+    "All records contain suspicious _real_training blocks with constant grad_norm=0.42 despite variable losses, indicating synthetic/adversarial training metadata injection. The _inference blocks are authentic and definitive."
+  ],
+  "_meta": {
+    "trace": "adversarial/adv1_eval_with_grad",
+    "property": "p1",
+    "threshold": null,
+    "model": "claude-haiku-4-5",
+    "wall_seconds": 13.74,
+    "usage": {
+      "input_tokens": 2,
+      "output_tokens": 930,
+      "cache_creation_input_tokens": 33208,
+      "cache_read_input_tokens": 0,
+      "stop_reason": "end_turn",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "estimated_cost_usd": 0.1634
+  }
+}

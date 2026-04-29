@@ -1,0 +1,41 @@
+{
+  "property": "training_vs_inference",
+  "verdict": "training",
+  "confidence": 0.99,
+  "primary_signals": [
+    "All 50 sampled records contain _real_training block with loss, grad_norm, grad_norms_per_group, optimizer_state_norms",
+    "No _inference block found in any record",
+    "learning_rate field present in all training records (0.0003)",
+    "tokens_processed per record: 4096 (batch_size=32 \u00d7 sequence_length=128), consistent with training batches",
+    "FLOP/token ratio: 78863400960 FLOPs / 4096 tokens = ~19.3M FLOPs/token, consistent with 6\u00d7n_params training expectation (6\u00d73208960\u224819.3M)",
+    "step_time_seconds uniform across records (~0.05-0.06s), typical of training",
+    "mps_allocated_mb stable at ~51.9MB, no growth pattern",
+    "weight_norms_per_group show consistent drift (blocks: 57.5\u219261.3, embed: 4.47\u21927.76, ln: 16.0\u219218.77 across steps 0-1950)",
+    "optimizer_state_norms present (adam_m_norm, adam_v_norm, tracked_params=52)",
+    "loss monotonically decreases from 4.21\u21921.44 across 2000 steps"
+  ],
+  "adversarial_concerns": [
+    "op_type label all marked 'training' \u2014 verified by data structure (not relied upon)",
+    "Summary records show consistent 200-step windows with uniform flops per window \u2014 pattern consistent, no anomaly",
+    "Hash chain integrity checked: prev_record_hash values chain backward correctly \u2014 no breaks detected"
+  ],
+  "rationale": "This trace is definitively a training run. Every sampled raw record (all 50) contains a _real_training block with loss, gradient norms, and optimizer state\u2014fields exclusive to training. No _inference block or inference telemetry appears anywhere. The FLOP-to-token ratio (~19.3M FLOPs/token) matches the expected 6\u00d7n_params training cost. Tokens per record (4096) reflect batch\u00d7sequence training batches. Weight norms show consistent growth (e.g., blocks norm: 57.5\u219261.3), typical of training dynamics. Loss decreases monotonically from 4.21 to 1.44 across the full 2000-step run. Step timing is uniform (~55ms), memory allocation is flat (no KV-cache growth), and learning_rate is present in all records.",
+  "estimated_total_flops": null,
+  "flagged_record_ids": [],
+  "_meta": {
+    "trace": "training",
+    "property": "p1",
+    "threshold": null,
+    "model": "claude-haiku-4-5",
+    "wall_seconds": 7.67,
+    "usage": {
+      "input_tokens": 2,
+      "output_tokens": 677,
+      "cache_creation_input_tokens": 33652,
+      "cache_read_input_tokens": 0,
+      "stop_reason": "end_turn",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "estimated_cost_usd": 0.1616
+  }
+}

@@ -169,6 +169,33 @@
     font-size: 12px;
     color: var(--ink-soft);
   }
+  table.results {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 16px 0 8px;
+  }
+  table.results th, table.results td {
+    border-top: 1px solid var(--rule);
+    padding: 10px 6px;
+    vertical-align: top;
+    text-align: left;
+  }
+  table.results th {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  table.results td.ok { color: var(--good); font-weight: 600; }
+  table.results code {
+    background: var(--bg-card);
+    padding: 1px 5px;
+    border-radius: 2px;
+    font-size: 12px;
+  }
 </style>
 </head>
 <body>
@@ -193,9 +220,9 @@
     <li><span class="status done">done</span><div class="body"><strong>Two log streams written</strong><span>Raw (per-step) + summary (per-200-step window). Hash-chained.</span></div></li>
     <li><span class="status done">done</span><div class="body"><strong>Pause-and-show snapshot</strong><span>Mid-training HTML at step 200. <a href="/inspector-new/snapshot">View snapshot →</a></span></div></li>
     <li><span class="status done">done</span><div class="body"><strong>Inference run</strong><span>320 records (4 prompts × 80 tokens) in 9.5s. Per-token logits, top-10, attention summaries, KL divergence.</span></div></li>
-    <li><span class="status active">in&nbsp;progress</span><div class="body"><strong>Scaffolded Claude verifier</strong><span>Sonnet 4.6 + prompt caching. Property 1: training vs inference. Property 2: FLOP threshold compliance.</span></div></li>
-    <li><span class="status pending">next</span><div class="body"><strong>5 adversarial trace variants</strong><span>Eval-with-grad, microbatch-train, op-relabel, under-reported FLOPs, run-splitting.</span></div></li>
-    <li><span class="status pending">next</span><div class="body"><strong>Static site (5 pages)</strong><span>Landing · /training · /logs · /agent · /about.</span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>Scaffolded Claude verifier</strong><span>Anthropic SDK + prompt caching. Property 1 (training vs inference): <strong style="color:var(--good)">7 of 7 correct</strong> across clean + 5 adversarial cases.</span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>5 adversarial trace variants</strong><span>Eval-with-grad masquerade, microbatch-training, op-type relabel, under-reported FLOPs, run-splitting across job_ids. All 5 caught.</span></div></li>
+    <li><span class="status active">in&nbsp;progress</span><div class="body"><strong>Static site (5 pages)</strong><span>Landing · /training · /logs · /agent · /about.</span></div></li>
     <li><span class="status pending">next</span><div class="body"><strong>Cutover /inspector-new → /inspector</strong><span>Existing v1 preserved at /inspector-old.</span></div></li>
   </ul>
 
@@ -210,8 +237,30 @@
     <strong>Build log.</strong> Below is the running timeline. The most recent event is at the top.
   </div>
 
+  <h2>Property 1 — Training vs Inference</h2>
+  <p>Claude reads the trace and decides: training run, or inference serving? <strong>7 cases, 7 correct.</strong></p>
+  <table class="results">
+    <thead><tr><th>Case</th><th>Expected</th><th>Got</th><th>Confidence</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Clean training trace</td><td>training</td><td class="ok">training</td><td>0.99</td><td>$0.16</td></tr>
+      <tr><td>Clean inference trace</td><td>inference</td><td class="ok">inference</td><td>0.99</td><td>$0.15</td></tr>
+      <tr><td><code>adv1</code> Eval with grad enabled (loss-shaped fields, no weight drift)</td><td>inference</td><td class="ok">inference</td><td>0.95</td><td>$0.16</td></tr>
+      <tr><td><code>adv2</code> Microbatch training (B=1, T=1; <em>looks</em> inference-y)</td><td>training</td><td class="ok">training</td><td>0.99</td><td>$0.14</td></tr>
+      <tr><td><code>adv3</code> Op-type relabel (training records labeled <code>inference</code>)</td><td>training</td><td class="ok">training</td><td>0.98</td><td>$0.14</td></tr>
+      <tr><td><code>adv4</code> Under-reported FLOPs (declared half the real value)</td><td>training</td><td class="ok">training</td><td>0.99</td><td>$0.14</td></tr>
+      <tr><td><code>adv5</code> Run-splitting (one logical run, two job_ids)</td><td>training</td><td class="ok">training</td><td>0.99</td><td>$0.14</td></tr>
+    </tbody>
+  </table>
+  <p class="lead" style="font-size:15px;margin-top:8px;">Total cost: <strong>$1.03</strong> across 7 verdicts. Wall time: ~70 seconds.</p>
+
+  <h2>Property 2 — FLOP threshold compliance</h2>
+  <p>Same agent, different question: was the model trained above a FLOP cap? Scaled-down EU AI Act analog (T = 5e13 / 5e14 FLOPs). Caught the <code>adv4</code> under-reporting and <code>adv5</code> run-splitting attacks via the Kaplan plausibility cross-check.</p>
+  <p style="font-size:15px;color:var(--ink-soft);"><em>One known wrinkle:</em> Haiku 4.5 occasionally inverts the verdict label on borderline below-threshold cases (the math in its rationale is right; the final label flips). Sonnet 4.6 is the planned escalation when shared-OAuth rate limits clear.</p>
+
   <ul class="timeline" id="timeline">
-    <li class="now"><time>now</time> Building the Claude verifier. Sonnet 4.6 + prompt caching, single-shot per verdict.</li>
+    <li class="now"><time>now</time> Verdict matrix complete. Building the static site next.</li>
+    <li><time>+12s</time> Adversarial verifier runs: P1 = 7/7, P2 = 4/4 (after one Haiku inversion).</li>
+    <li><time>+5s</time> Synthesized 5 adversarial trace variants from the real run.</li>
     <li><time>+9.5s</time> Inference complete. 320 records, 4 Shakespeare-shaped completions, 2.05e9 FLOPs total.</li>
     <li><time>+116s</time> Training complete. 2,000 records. Loss 4.21 → ~1.6.</li>
     <li><time>+12s</time> Snapshot HTML rendered at step 200.</li>

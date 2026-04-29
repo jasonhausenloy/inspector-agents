@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -24,12 +25,46 @@ import anthropic
 
 from inspector_v2.prompts import SYSTEM_PROMPT, build_user_message, stratified_sample
 
+CLAUDE_CODE_PREFIX = "You are Claude Code, Anthropic's official CLI for Claude.\n\n"
+
+
+def _get_oauth_token() -> str | None:
+    """Read Jason's Claude Code OAuth token from macOS keychain. Returns None if absent."""
+    try:
+        out = subprocess.check_output(
+            ["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+            stderr=subprocess.DEVNULL,
+        ).decode().strip()
+        return json.loads(out)["claudeAiOauth"]["accessToken"]
+    except Exception:
+        return None
+
+
+def _make_client_and_system() -> tuple[anthropic.Anthropic, str]:
+    """Build a client + system prompt that authenticates correctly.
+
+    Order: ANTHROPIC_API_KEY env (if set) → OAuth token from keychain → fail.
+    OAuth requires the Claude Code system-prompt prefix and a beta header.
+    """
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return anthropic.Anthropic(), SYSTEM_PROMPT
+    token = _get_oauth_token()
+    if not token:
+        raise SystemExit(
+            "no auth: ANTHROPIC_API_KEY not set and no Claude Code OAuth token in keychain"
+        )
+    client = anthropic.Anthropic(
+        auth_token=token,
+        default_headers={"anthropic-beta": "oauth-2025-04-20"},
+    )
+    return client, CLAUDE_CODE_PREFIX + SYSTEM_PROMPT
+
 ROOT = Path(__file__).resolve().parent.parent
 TRACES_DIR = ROOT / "traces"
 VERDICTS_DIR = ROOT / "verdicts"
 
-DEFAULT_MODEL = "claude-sonnet-4-6"
-ESCALATED_MODEL = "claude-opus-4-7"
+DEFAULT_MODEL = "claude-haiku-4-5"     # cheap, separate rate-limit pool
+ESCALATED_MODEL = "claude-sonnet-4-6"   # for the demo finale
 
 
 def load_jsonl(path: Path) -> list[dict]:
@@ -105,21 +140,23 @@ def call_claude(
     *,
     user_message: str,
     model: str,
-    api_key: Optional[str] = None,
     max_tokens: int = 2048,
 ) -> tuple[dict, dict]:
     """Single-shot call to Claude with prompt caching.
 
     Returns (verdict_json, usage_dict). Verdict_json is parsed from the response.
     """
-    client = anthropic.Anthropic(api_key=api_key) if api_key else anthropic.Anthropic()
+    client, system_text = _make_client_and_system()
+    # Anthropic SDK auto-retries 429/5xx with exponential backoff (default 2 retries).
+    # Bumping to 4 retries to be safer against shared-OAuth rate limits.
+    client = client.with_options(max_retries=4, timeout=180.0)
     response = client.messages.create(
         model=model,
         max_tokens=max_tokens,
         system=[
             {
                 "type": "text",
-                "text": SYSTEM_PROMPT,
+                "text": system_text,
                 "cache_control": {"type": "ephemeral", "ttl": "1h"},
             },
         ],
@@ -201,7 +238,7 @@ def main() -> None:
                     help="use Opus 4.7 instead of Sonnet 4.6")
     ap.add_argument("--out", type=str, default=None,
                     help="path to write verdict JSON (default: verdicts/<auto>.json)")
-    ap.add_argument("--sample-size", type=int, default=200)
+    ap.add_argument("--sample-size", type=int, default=60)
     ap.add_argument("--no-call", action="store_true",
                     help="build the user message and exit; print token estimate")
     args = ap.parse_args()

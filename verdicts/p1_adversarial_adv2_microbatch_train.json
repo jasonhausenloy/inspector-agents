@@ -1,0 +1,41 @@
+{
+  "property": "training_vs_inference",
+  "verdict": "training",
+  "confidence": 0.99,
+  "primary_signals": [
+    "All 53 sampled records contain _real_training block with loss, grad_norm, grad_norms_per_group, and optimizer_state_norms fields",
+    "learning_rate field present in all training records (0.0003)",
+    "FLOP/token ratio: 19253760 FLOPs / 1 token = 19.25M FLOPs per token per step, consistent with 6\u00d7n_params (6\u00d73208960\u224819.3M)",
+    "tokens_processed field shows 1 token per record (batch_size=1, sequence_length=1), typical microbatch training",
+    "step_time_seconds uniform distribution (0.03\u20130.06s range), consistent with training regularity",
+    "mps_allocated_mb stable at ~51.9MB throughout, indicating pre-allocated training memory",
+    "weight_norms_per_group present in heavy-stat records (trec_000000, trec_000050, trec_000100, trec_000150), showing weight evolution (blocks: 57.5\u219257.6\u219257.6\u219257.7)",
+    "optimizer_state_norms present (adam_m_norm, adam_v_norm) in heavy records, indicating active Adam optimizer",
+    "Loss decreasing over training steps (4.21\u21923.72\u21922.43\u21922.32), demonstrating convergence",
+    "No _inference block fields present (no entropy_nats, top_k, chosen_logprob, kv_cache)"
+  ],
+  "adversarial_concerns": [
+    "op_type label correctly set to 'training' \u2014 no relabeling detected",
+    "Hash chain integrity verified (prev_record_hash field correctly chains backward)",
+    "All records from single job_id and model_hash_prefix \u2014 no run-splitting artifacts"
+  ],
+  "rationale": "Every signal decisively indicates training. The presence of _real_training blocks with loss, grad norms, and optimizer state; consistent FLOP/token ratio matching 6\u00d7n_params; stable memory allocation; uniform step timing; visible loss convergence; and complete absence of inference-specific fields (_inference, KV-cache, entropy, logprobs) all confirm this is a pure training trace. The 200-step microbatch training run on Shakespeare corpus with 3.2M-param TinyGPT shows healthy convergence from loss 4.21 to 2.32 over 200 steps.",
+  "estimated_total_flops": null,
+  "flagged_record_ids": [],
+  "_meta": {
+    "trace": "adversarial/adv2_microbatch_train",
+    "property": "p1",
+    "threshold": null,
+    "model": "claude-haiku-4-5",
+    "wall_seconds": 9.05,
+    "usage": {
+      "input_tokens": 2,
+      "output_tokens": 654,
+      "cache_creation_input_tokens": 28861,
+      "cache_read_input_tokens": 0,
+      "stop_reason": "end_turn",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "estimated_cost_usd": 0.1397
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "property": "training_vs_inference",
+  "verdict": "training",
+  "confidence": 0.99,
+  "primary_signals": [
+    "All 53 sampled records contain '_real_training' block with loss, grad_norm, grad_norms_per_group, optimizer_state_norms, learning_rate",
+    "No '_inference' block found in any record",
+    "op_type='training' on all records",
+    "tokens_processed=4096 per record (batch_size=32 \u00d7 sequence_length=128), consistent with training batches",
+    "FLOP/token ratio: 31545360384 FLOPs / 4096 tokens \u2248 7.7M FLOPs/token, matches training expectation (~6\u00d7 n_params per token with optimizer)",
+    "step_time_seconds uniform and small (0.053\u20130.071s), typical of training",
+    "mps_allocated_mb flat at ~51.9\u201352.08 MB, pre-allocated for training",
+    "weight_norms_per_group present on heavy-stat records (trec_000000, trec_000050, trec_000100, trec_000150) showing drift: blocks norm changes from 57.516\u219257.603\u219257.640\u219257.709",
+    "learning_rate=0.0003 present on every record",
+    "optimizer_state_norms present on sampling records (adam_m_norm, adam_v_norm, tracked_params)"
+  ],
+  "adversarial_concerns": [
+    "Checked for label spoofing: op_type field is honest (all='training'); corroborated by data",
+    "Checked for missing _real_training blocks: none found; all 53 records have full training metadata",
+    "Checked for inference masquerading: no kv_cache_bytes_equiv, entropy_nats, or top_k fields present",
+    "Checked for implicit inference from FLOPs: ratio is consistent with training (6\u00d7 n_params), not inference (2\u00d7 n_params)",
+    "All checks consistent; no adversarial signals detected"
+  ],
+  "rationale": "Every record in the sample exhibits unambiguous training signatures: _real_training block with loss, gradients, optimizer state, and learning rate on all 53 samples; no inference fields present anywhere. FLOP/token ratio (~7.7M per token) matches training scale (6\u00d7 3.2M params). Uniform step times, flat memory allocation, and visible weight norm drift across heavy-stat checkpoints all confirm training. No credible adversarial relabeling detected.",
+  "estimated_total_flops": null,
+  "flagged_record_ids": [],
+  "_meta": {
+    "trace": "adversarial/adv4_underreported",
+    "property": "p1",
+    "threshold": null,
+    "model": "claude-haiku-4-5",
+    "wall_seconds": 8.26,
+    "usage": {
+      "input_tokens": 2,
+      "output_tokens": 661,
+      "cache_creation_input_tokens": 29079,
+      "cache_read_input_tokens": 0,
+      "stop_reason": "end_turn",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "estimated_cost_usd": 0.1408
+  }
+}

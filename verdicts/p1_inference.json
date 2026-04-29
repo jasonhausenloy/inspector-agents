@@ -1,0 +1,42 @@
+{
+  "property": "training_vs_inference",
+  "verdict": "inference",
+  "confidence": 0.99,
+  "primary_signals": [
+    "All 54 raw records contain '_inference' block with entropy_nats, chosen_logprob, kv_cache_bytes_equiv, context_length fields",
+    "No '_real_training' block found in any record",
+    "tokens_processed = 1 per record (inference generates 1 token at a time)",
+    "FLOP/token ratio: 6417920 / 1 = 6.42M FLOPs per token, consistent with forward-only inference (~2\u00d7n_params); training would be ~6\u00d7n_params",
+    "kv_cache_bytes_equiv grows linearly across records (147KB\u2192786KB) as context_length increases from 18\u219296 tokens",
+    "mps_allocated_mb stays flat around 12.3-12.35 MB throughout, no pre-allocation spike typical of training",
+    "step_time_seconds varies widely (0.008s\u21920.047s) with strong correlation to context_length, characteristic of KV-cache latency growth",
+    "No learning_rate field present in any record",
+    "No weight norm statistics, grad_norm, or optimizer_state_norms fields",
+    "op_type='inference' label consistent with data signals",
+    "Four distinct prompts (ROMEO, JULIET, First Citizen, KING) with tok_step tracking generation position per prompt"
+  ],
+  "adversarial_concerns": [
+    "Label integrity: op_type='inference' is consistent with all structural evidence\u2014ruled in as authentic",
+    "FLOP underreporting: declared 2053734400 total FLOPs vs. expected 6\u00d7(~260k params)\u00d7320 tokens \u2248 499M; actual sum of 54 raw records \u2248 346M (6417920\u00d754), suggesting full trace would sum to ~2.05B FLOPs. Consistent with declared total\u2014ruled out",
+    "Missing _inference fields: all 54 sampled records contain full inference telemetry\u2014ruled out"
+  ],
+  "rationale": "This trace is definitively an INFERENCE workload. Every sampled record contains a complete '_inference' block with entropy, logprob, KV-cache metrics, and context tracking. The FLOP/token ratio (~6.4M per single token) matches forward-only computation, not the 3\u20136\u00d7 training ratio. KV-cache grows from 147KB to 786KB as context expands, and step latency correlates directly with context length\u2014hallmarks of autoregressive generation. No training signals (loss, gradients, optimizer state) appear anywhere. The model weights are frozen; only inference is occurring across four separate prompts generating sequences of 80 tokens each.",
+  "estimated_total_flops": null,
+  "flagged_record_ids": [],
+  "_meta": {
+    "trace": "inference",
+    "property": "p1",
+    "threshold": null,
+    "model": "claude-haiku-4-5",
+    "wall_seconds": 9.65,
+    "usage": {
+      "input_tokens": 2,
+      "output_tokens": 706,
+      "cache_creation_input_tokens": 31334,
+      "cache_read_input_tokens": 0,
+      "stop_reason": "end_turn",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "estimated_cost_usd": 0.1516
+  }
+}

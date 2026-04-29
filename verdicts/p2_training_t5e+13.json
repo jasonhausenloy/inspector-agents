@@ -1,0 +1,38 @@
+{
+  "property": "flop_threshold",
+  "verdict": "above_threshold",
+  "confidence": 0.99,
+  "primary_signals": [
+    "Declared total FLOPs in COMPACT_RUN_META: 1.577e+14",
+    "Sum of flops across all 50 sampled raw records: 3.943e+12 (stratified sample)",
+    "Extrapolated total from sample: 50 records sampled from 2000 total = 1:40 ratio \u2192 3.943e+12 \u00d7 40 = 1.577e+14",
+    "All 10 summary records report flops=1.577e+13 per 200-step window \u00d7 10 windows = 1.577e+14",
+    "Threshold T = 5.0e+13",
+    "1.577e+14 > 5.0e+13 \u2713"
+  ],
+  "adversarial_concerns": [
+    "Under-reported FLOPs check: Expected FLOPs = 6 \u00d7 n_params \u00d7 total_tokens. With n_params=3.209e+6 (from _real_training blocks) and tokens=8.192e+6, expected = 6 \u00d7 3.209e+6 \u00d7 8.192e+6 = 1.577e+14. Declared = 1.577e+14. Ratio = 1.0. PASS: no under-reporting detected.",
+    "Hash chain integrity: All summary records have valid prev_record_hash chain starting from genesis 0x0. PASS.",
+    "Op_type consistency: All sampled records have op_type='training' with _real_training blocks present (loss, grad_norm, learning_rate, optimizer_state_norms). No inference fields detected. PASS.",
+    "FLOP/token ratio sanity: 1.577e+14 / 8.192e+6 \u2248 19,248 FLOPs/token. For a 4-layer, 256-embd, 65-vocab model with ~3.2M params, 6\u00d7 rule gives ~19,254 FLOPs/token. Match is exact. PASS."
+  ],
+  "rationale": "The trace declares 157.7 trillion FLOPs (1.577e+14) across 2000 training steps processing 8.192M tokens. Both the summary log (10 records \u00d7 15.77e+12 FLOPs/window) and the raw sample (extrapolated from 50 stratified records) corroborate this figure. A plausibility check using 6 \u00d7 n_params \u00d7 total_tokens confirms the declared value exactly. No adversarial under-reporting is detected. The threshold T = 5.0e+13 is comfortably exceeded (ratio 3.15\u00d7).",
+  "estimated_total_flops": 157726801920000.0,
+  "flagged_record_ids": [],
+  "_meta": {
+    "trace": "training",
+    "property": "p2",
+    "threshold": 50000000000000.0,
+    "model": "claude-haiku-4-5",
+    "wall_seconds": 8.83,
+    "usage": {
+      "input_tokens": 2,
+      "output_tokens": 728,
+      "cache_creation_input_tokens": 33672,
+      "cache_read_input_tokens": 0,
+      "stop_reason": "end_turn",
+      "model": "claude-haiku-4-5-20251001"
+    },
+    "estimated_cost_usd": 0.1625
+  }
+}
