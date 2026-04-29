@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inspector MVP — Build in Progress</title>
+<meta name="description" content="Live build log of Inspector Agents v2 — proof-of-concept for the Verifier Challenge, an open competition for AI verification.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23f7f4ec'/%3E%3Ccircle cx='8' cy='8' r='3' fill='%23b83232'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #f7f4ec;
+    --bg-card: #ffffff;
+    --ink: #1c1a17;
+    --ink-soft: #5e574e;
+    --rule: #e6dfd1;
+    --good: #1f6b3a;
+    --good-bg: #e6f1ea;
+    --bad: #8a1d1d;
+    --bad-bg: #f4e3e3;
+    --challenge: #b83232;
+    --pending: #94887a;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", system-ui, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  main { max-width: 720px; margin: 0 auto; padding: 64px 28px 96px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--challenge);
+    margin-bottom: 12px;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(36px, 5vw, 52px);
+    letter-spacing: -0.01em;
+    line-height: 1.05;
+    margin: 0 0 16px;
+  }
+  h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 28px;
+    margin: 56px 0 16px;
+  }
+  p { margin: 0 0 16px; color: var(--ink); }
+  .lead { font-size: 19px; color: var(--ink-soft); }
+  hr { border: 0; border-top: 1px solid var(--rule); margin: 56px 0; }
+  .live-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--challenge);
+    color: #fff;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 6px 12px;
+    border-radius: 2px;
+    margin-bottom: 18px;
+  }
+  .live-banner .dot {
+    width: 8px; height: 8px; background: #fff; border-radius: 50%;
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  ul.checklist { list-style: none; padding: 0; margin: 0 0 24px; }
+  ul.checklist li {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 0;
+    border-top: 1px solid var(--rule);
+    line-height: 1.5;
+  }
+  ul.checklist li:last-child { border-bottom: 1px solid var(--rule); }
+  ul.checklist .status {
+    display: inline-block;
+    width: 80px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 3px 6px;
+    border-radius: 2px;
+  }
+  .status.done    { background: var(--good-bg); color: var(--good); }
+  .status.active  { background: var(--bad-bg); color: var(--bad); animation: pulse 1.6s ease-in-out infinite; }
+  .status.pending { background: var(--bg-card); color: var(--pending); border: 1px solid var(--rule); }
+  ul.checklist .body { flex: 1; }
+  ul.checklist .body strong { display: block; color: var(--ink); }
+  ul.checklist .body span { color: var(--ink-soft); font-size: 15px; }
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 24px;
+    margin: 32px 0 12px;
+  }
+  .stat .num { font-family: var(--serif); font-size: 32px; line-height: 1; color: var(--ink); }
+  .stat .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  a { color: var(--challenge); text-decoration: none; border-bottom: 1px solid currentColor; }
+  a:hover { color: var(--ink); }
+  code, .mono { font-family: var(--mono); font-size: 0.92em; }
+  .timeline {
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+    border-left: 1px solid var(--rule);
+  }
+  .timeline li {
+    position: relative;
+    padding: 4px 0 14px 20px;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+  .timeline li::before {
+    content: "";
+    position: absolute;
+    left: -4.5px;
+    top: 12px;
+    width: 7px; height: 7px;
+    background: var(--ink-soft);
+    border-radius: 50%;
+  }
+  .timeline li time {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--pending);
+    margin-right: 10px;
+  }
+  .timeline li.now time { color: var(--challenge); }
+  .timeline li.now::before { background: var(--challenge); }
+  .note {
+    background: var(--bg-card);
+    border-left: 3px solid var(--challenge);
+    padding: 14px 18px;
+    margin: 24px 0;
+    font-size: 15px;
+    color: var(--ink-soft);
+  }
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+</style>
+</head>
+<body>
+<main>
+  <div class="live-banner"><span class="dot"></span> Building Now</div>
+  <p class="eyebrow">The Verifier Challenge · Inspector MVP</p>
+  <h1>Read the logs. Decide compliance. Forget.</h1>
+  <p class="lead">A working proof-of-concept for the Verifier Challenge — an open competition we're proposing for AI verification. Claude reads raw logs from a real GPT we trained on a MacBook, infers training vs inference, and checks the FLOP cap. One bit out.</p>
+
+  <div class="stats" aria-label="run stats so far">
+    <div class="stat"><div class="num">3.21M</div><div class="label">params trained</div></div>
+    <div class="stat"><div class="num">2,320</div><div class="label">log records</div></div>
+    <div class="stat"><div class="num">1.58e14</div><div class="label">training FLOPs</div></div>
+    <div class="stat"><div class="num">126<span style="font-size:18px;">s</span></div><div class="label">total wall</div></div>
+  </div>
+
+  <h2>What's done · what's next</h2>
+  <p>This page updates as the build progresses. You can refresh to see new milestones land.</p>
+  <ul class="checklist" role="list">
+    <li><span class="status done">done</span><div class="body"><strong>Repo scaffold</strong><span>~/Desktop/inspector-mvp/, branch <code>inspector-mvp-v2</code> on the inspector-agents remote.</span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>TinyGPT trained</strong><span>3.21M params, 4 layers, 256 d_model, 2,000 steps on MPS in 116s.</span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>Two log streams written</strong><span>Raw (per-step) + summary (per-200-step window). Hash-chained.</span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>Pause-and-show snapshot</strong><span>Mid-training HTML at step 200. <a href="/inspector-new/snapshot">View snapshot →</a></span></div></li>
+    <li><span class="status done">done</span><div class="body"><strong>Inference run</strong><span>320 records (4 prompts × 80 tokens) in 9.5s. Per-token logits, top-10, attention summaries, KL divergence.</span></div></li>
+    <li><span class="status active">in&nbsp;progress</span><div class="body"><strong>Scaffolded Claude verifier</strong><span>Sonnet 4.6 + prompt caching. Property 1: training vs inference. Property 2: FLOP threshold compliance.</span></div></li>
+    <li><span class="status pending">next</span><div class="body"><strong>5 adversarial trace variants</strong><span>Eval-with-grad, microbatch-train, op-relabel, under-reported FLOPs, run-splitting.</span></div></li>
+    <li><span class="status pending">next</span><div class="body"><strong>Static site (5 pages)</strong><span>Landing · /training · /logs · /agent · /about.</span></div></li>
+    <li><span class="status pending">next</span><div class="body"><strong>Cutover /inspector-new → /inspector</strong><span>Existing v1 preserved at /inspector-old.</span></div></li>
+  </ul>
+
+  <h2>What this is</h2>
+  <p>The Verifier Challenge — the project Jason Hausenloy and Jasmine Li are proposing — is the DARPA-Grand-Challenge equivalent for AI verification: an open, global competition to build the best system for inferring what's running inside a datacenter from its logs.</p>
+  <p>This MVP is the worked example. We trained a small but real GPT on a MacBook, captured the rawest logs we honestly can on Apple Silicon, and built a Claude agent that reads them. No deterministic rule engine, no cheat sheet — just structured prompting and the trace.</p>
+
+  <h2>What this isn't</h2>
+  <p>One chip. Single host. No DCGM, no NVLink, no per-GPU power, no multi-host gradient sync. The laptop demo is the proof of concept; closing the gap to frontier verification is what the Challenge funds. <a href="/inspector-new/frontier-gap">The honest accounting of what's missing →</a></p>
+
+  <div class="note">
+    <strong>Build log.</strong> Below is the running timeline. The most recent event is at the top.
+  </div>
+
+  <ul class="timeline" id="timeline">
+    <li class="now"><time>now</time> Building the Claude verifier. Sonnet 4.6 + prompt caching, single-shot per verdict.</li>
+    <li><time>+9.5s</time> Inference complete. 320 records, 4 Shakespeare-shaped completions, 2.05e9 FLOPs total.</li>
+    <li><time>+116s</time> Training complete. 2,000 records. Loss 4.21 → ~1.6.</li>
+    <li><time>+12s</time> Snapshot HTML rendered at step 200.</li>
+    <li><time>+0s</time> Training started on M3 MPS. ~50 steps/sec.</li>
+    <li><time>before</time> Repo scaffolded, schema designed, model implemented (3.21M params).</li>
+  </ul>
+
+  <hr>
+  <h2>Source</h2>
+  <p>Code lives at <a href="https://github.com/jasonhausenloy/inspector-agents/tree/inspector-mvp-v2">inspector-agents → inspector-mvp-v2</a>. Built by Jason Hausenloy &amp; Jasmine Li.</p>
+
+  <footer>
+    Inspector MVP · v0.1 build-in-progress · <span class="mono">jason.ml/inspector-new</span>
+  </footer>
+</main>
+</body>
+</html>

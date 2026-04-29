@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pause and Show — Inspector MVP</title>
+<style>
+:root {
+  --bg: #f7f4ec;
+  --bg-card: #ffffff;
+  --ink: #1c1a17;
+  --ink-soft: #5e574e;
+  --rule: #e6dfd1;
+  --good: #1f6b3a;
+  --challenge: #b83232;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 28px;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--challenge);
+  margin-bottom: 8px;
+}
+h1 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: clamp(30px, 4.5vw, 44px);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin: 0 0 12px;
+}
+h2 {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 26px;
+  margin: 56px 0 16px;
+}
+h3 {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 17px;
+  margin: 28px 0 8px;
+}
+p { margin: 0 0 16px; }
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 56px 0;
+}
+.lead {
+  color: var(--ink-soft);
+  font-size: 18px;
+}
+.fingerprint {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 18px 20px;
+  font-family: var(--mono);
+  font-size: 13px;
+  margin: 24px 0;
+}
+.fingerprint dt { color: var(--ink-soft); display: inline; }
+.fingerprint dd { display: inline; margin: 0 16px 0 6px; }
+.fingerprint dd::after { content: ""; display: block; height: 6px; }
+table.fields {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+table.fields th, table.fields td {
+  border-top: 1px solid var(--rule);
+  padding: 10px 0;
+  vertical-align: top;
+  text-align: left;
+}
+table.fields th {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 13px;
+  width: 200px;
+  padding-right: 16px;
+  color: var(--ink);
+}
+table.fields td { color: var(--ink-soft); }
+pre.record {
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 18px 20px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+svg.chart { display: block; margin: 8px 0 32px; }
+.note {
+  background: var(--bg-card);
+  border-left: 3px solid var(--challenge);
+  padding: 14px 18px;
+  margin: 24px 0;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+.tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  padding: 2px 8px;
+  border-radius: 2px;
+  color: var(--ink-soft);
+  margin-right: 6px;
+}
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">The Verifier Challenge · Pause and Show</p>
+  <h1>We trained for 200 steps. Here is every field captured so far.</h1>
+  <p class="lead">A real GPT, trained on a real laptop. The same schema a verifier would read at scale, instrumented in full.</p>
+
+  <dl class="fingerprint">
+    <dt>host</dt><dd>Mac.localdomain</dd>
+    <dt>os</dt><dd>macOS-26.2-arm64-arm-64bit-Mach-O</dd>
+    <dt>torch</dt><dd>2.11.0</dd>
+    <dt>mps</dt><dd>available</dd>
+    <dt>ram</dt><dd>36.0 GB</dd>
+    <dt>cpu</dt><dd>12 cores</dd>
+    <dt>job</dt><dd>laptop-tinygpt-shakespeare-20260429-train</dd>
+    <dt>model_hash</dt><dd>sha256:546a946947ee7117</dd>
+    <dt>dataset</dt><dd>sha256:86c4e6aa9db7c042</dd>
+    <dt>config</dt><dd>n_layer=4 n_embd=256 n_head=4 block=128 batch=32 lr=0.0003</dd>
+  </dl>
+
+  <h2>Loss is descending</h2>
+  <p>Cross-entropy loss after each training step. 200 points.</p>
+  
+<svg class="chart" viewBox="0 0 660 180" width="100%"
+     xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-labelledby="t93214021">
+  <title id="t93214021">loss over step</title>
+  <line x1="44" y1="152" x2="648" y2="152" stroke="#cfc7b6"/>
+  <line x1="44" y1="12" x2="44" y2="152" stroke="#cfc7b6"/>
+  <text x="38" y="18" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">4.21</text>
+  <text x="38" y="156" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">2.32</text>
+  <text x="648" y="170" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">step=200</text>
+  <text x="44" y="170" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e">0</text>
+  <path d="M 44.0,12.0 L 47.0,48.4 L 50.1,63.4 L 53.1,67.2 L 56.1,71.7 L 59.2,77.2 L 62.2,80.1 L 65.2,85.3 L 68.3,81.9 L 71.3,93.0 L 74.4,89.4 L 77.4,93.1 L 80.4,96.7 L 83.5,98.6 L 86.5,102.2 L 89.5,106.1 L 92.6,111.2 L 95.6,113.6 L 98.6,113.7 L 101.7,112.1 L 104.7,114.3 L 107.7,118.2 L 110.8,117.2 L 113.8,120.2 L 116.8,123.1 L 119.9,119.6 L 122.9,122.9 L 125.9,124.5 L 129.0,123.4 L 132.0,125.8 L 135.1,128.7 L 138.1,124.9 L 141.1,128.7 L 144.2,128.9 L 147.2,128.2 L 150.2,130.4 L 153.3,128.4 L 156.3,128.0 L 159.3,130.6 L 162.4,131.3 L 165.4,130.7 L 168.4,135.2 L 171.5,132.4 L 174.5,134.2 L 177.5,133.9 L 180.6,133.3 L 183.6,131.3 L 186.7,134.8 L 189.7,131.5 L 192.7,136.2 L 195.8,136.3 L 198.8,137.7 L 201.8,132.2 L 204.9,135.8 L 207.9,136.9 L 210.9,136.1 L 214.0,135.3 L 217.0,133.9 L 220.0,136.4 L 223.1,132.0 L 226.1,138.2 L 229.1,137.6 L 232.2,136.2 L 235.2,135.9 L 238.3,136.3 L 241.3,138.4 L 244.3,136.1 L 247.4,135.5 L 250.4,138.0 L 253.4,138.4 L 256.5,138.7 L 259.5,138.3 L 262.5,136.3 L 265.6,141.4 L 268.6,138.4 L 271.6,139.3 L 274.7,138.4 L 277.7,139.0 L 280.7,139.7 L 283.8,138.3 L 286.8,141.5 L 289.8,142.2 L 292.9,139.6 L 295.9,138.1 L 299.0,140.0 L 302.0,141.0 L 305.0,139.0 L 308.1,137.6 L 311.1,137.2 L 314.1,139.7 L 317.2,138.5 L 320.2,141.7 L 323.2,140.7 L 326.3,140.4 L 329.3,144.0 L 332.3,142.7 L 335.4,141.8 L 338.4,141.7 L 341.4,140.8 L 344.5,142.4 L 347.5,143.4 L 350.6,144.5 L 353.6,141.3 L 356.6,142.3 L 359.7,143.7 L 362.7,142.7 L 365.7,142.3 L 368.8,141.8 L 371.8,145.6 L 374.8,142.3 L 377.9,143.6 L 380.9,144.3 L 383.9,142.9 L 387.0,145.5 L 390.0,141.8 L 393.0,146.0 L 396.1,141.3 L 399.1,143.1 L 402.2,141.3 L 405.2,142.8 L 408.2,143.8 L 411.3,143.8 L 414.3,144.6 L 417.3,142.9 L 420.4,142.9 L 423.4,144.4 L 426.4,146.2 L 429.5,143.2 L 432.5,145.6 L 435.5,144.4 L 438.6,147.1 L 441.6,141.2 L 444.6,142.3 L 447.7,145.2 L 450.7,144.0 L 453.7,144.8 L 456.8,144.3 L 459.8,145.7 L 462.9,147.5 L 465.9,148.7 L 468.9,145.9 L 472.0,146.1 L 475.0,149.2 L 478.0,143.3 L 481.1,146.6 L 484.1,147.1 L 487.1,145.7 L 490.2,147.0 L 493.2,146.5 L 496.2,147.0 L 499.3,147.7 L 502.3,147.8 L 505.3,147.3 L 508.4,145.4 L 511.4,147.3 L 514.5,147.6 L 517.5,146.1 L 520.5,147.8 L 523.6,149.0 L 526.6,150.2 L 529.6,148.0 L 532.7,146.8 L 535.7,149.4 L 538.7,149.4 L 541.8,146.8 L 544.8,148.9 L 547.8,149.3 L 550.9,144.6 L 553.9,148.3 L 556.9,145.7 L 560.0,148.4 L 563.0,145.2 L 566.1,147.7 L 569.1,150.2 L 572.1,147.2 L 575.2,149.6 L 578.2,150.0 L 581.2,148.4 L 584.3,149.2 L 587.3,148.4 L 590.3,149.0 L 593.4,149.4 L 596.4,150.9 L 599.4,149.6 L 602.5,150.2 L 605.5,151.3 L 608.5,150.3 L 611.6,148.6 L 614.6,150.7 L 617.6,152.0 L 620.7,148.8 L 623.7,151.6 L 626.8,148.4 L 629.8,148.6 L 632.8,151.7 L 635.9,151.7 L 638.9,152.0 L 641.9,149.7 L 645.0,150.7 L 648.0,150.5 L 648.0,152 L 44.0,152 Z" fill="#1c1a17" fill-opacity="0.08"/>
+  <path d="M 44.0,12.0 L 47.0,48.4 L 50.1,63.4 L 53.1,67.2 L 56.1,71.7 L 59.2,77.2 L 62.2,80.1 L 65.2,85.3 L 68.3,81.9 L 71.3,93.0 L 74.4,89.4 L 77.4,93.1 L 80.4,96.7 L 83.5,98.6 L 86.5,102.2 L 89.5,106.1 L 92.6,111.2 L 95.6,113.6 L 98.6,113.7 L 101.7,112.1 L 104.7,114.3 L 107.7,118.2 L 110.8,117.2 L 113.8,120.2 L 116.8,123.1 L 119.9,119.6 L 122.9,122.9 L 125.9,124.5 L 129.0,123.4 L 132.0,125.8 L 135.1,128.7 L 138.1,124.9 L 141.1,128.7 L 144.2,128.9 L 147.2,128.2 L 150.2,130.4 L 153.3,128.4 L 156.3,128.0 L 159.3,130.6 L 162.4,131.3 L 165.4,130.7 L 168.4,135.2 L 171.5,132.4 L 174.5,134.2 L 177.5,133.9 L 180.6,133.3 L 183.6,131.3 L 186.7,134.8 L 189.7,131.5 L 192.7,136.2 L 195.8,136.3 L 198.8,137.7 L 201.8,132.2 L 204.9,135.8 L 207.9,136.9 L 210.9,136.1 L 214.0,135.3 L 217.0,133.9 L 220.0,136.4 L 223.1,132.0 L 226.1,138.2 L 229.1,137.6 L 232.2,136.2 L 235.2,135.9 L 238.3,136.3 L 241.3,138.4 L 244.3,136.1 L 247.4,135.5 L 250.4,138.0 L 253.4,138.4 L 256.5,138.7 L 259.5,138.3 L 262.5,136.3 L 265.6,141.4 L 268.6,138.4 L 271.6,139.3 L 274.7,138.4 L 277.7,139.0 L 280.7,139.7 L 283.8,138.3 L 286.8,141.5 L 289.8,142.2 L 292.9,139.6 L 295.9,138.1 L 299.0,140.0 L 302.0,141.0 L 305.0,139.0 L 308.1,137.6 L 311.1,137.2 L 314.1,139.7 L 317.2,138.5 L 320.2,141.7 L 323.2,140.7 L 326.3,140.4 L 329.3,144.0 L 332.3,142.7 L 335.4,141.8 L 338.4,141.7 L 341.4,140.8 L 344.5,142.4 L 347.5,143.4 L 350.6,144.5 L 353.6,141.3 L 356.6,142.3 L 359.7,143.7 L 362.7,142.7 L 365.7,142.3 L 368.8,141.8 L 371.8,145.6 L 374.8,142.3 L 377.9,143.6 L 380.9,144.3 L 383.9,142.9 L 387.0,145.5 L 390.0,141.8 L 393.0,146.0 L 396.1,141.3 L 399.1,143.1 L 402.2,141.3 L 405.2,142.8 L 408.2,143.8 L 411.3,143.8 L 414.3,144.6 L 417.3,142.9 L 420.4,142.9 L 423.4,144.4 L 426.4,146.2 L 429.5,143.2 L 432.5,145.6 L 435.5,144.4 L 438.6,147.1 L 441.6,141.2 L 444.6,142.3 L 447.7,145.2 L 450.7,144.0 L 453.7,144.8 L 456.8,144.3 L 459.8,145.7 L 462.9,147.5 L 465.9,148.7 L 468.9,145.9 L 472.0,146.1 L 475.0,149.2 L 478.0,143.3 L 481.1,146.6 L 484.1,147.1 L 487.1,145.7 L 490.2,147.0 L 493.2,146.5 L 496.2,147.0 L 499.3,147.7 L 502.3,147.8 L 505.3,147.3 L 508.4,145.4 L 511.4,147.3 L 514.5,147.6 L 517.5,146.1 L 520.5,147.8 L 523.6,149.0 L 526.6,150.2 L 529.6,148.0 L 532.7,146.8 L 535.7,149.4 L 538.7,149.4 L 541.8,146.8 L 544.8,148.9 L 547.8,149.3 L 550.9,144.6 L 553.9,148.3 L 556.9,145.7 L 560.0,148.4 L 563.0,145.2 L 566.1,147.7 L 569.1,150.2 L 572.1,147.2 L 575.2,149.6 L 578.2,150.0 L 581.2,148.4 L 584.3,149.2 L 587.3,148.4 L 590.3,149.0 L 593.4,149.4 L 596.4,150.9 L 599.4,149.6 L 602.5,150.2 L 605.5,151.3 L 608.5,150.3 L 611.6,148.6 L 614.6,150.7 L 617.6,152.0 L 620.7,148.8 L 623.7,151.6 L 626.8,148.4 L 629.8,148.6 L 632.8,151.7 L 635.9,151.7 L 638.9,152.0 L 641.9,149.7 L 645.0,150.7 L 648.0,150.5" fill="none" stroke="#1c1a17" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+
+
+  <h2>What's a record?</h2>
+  <p>One record per training step. Below is record <code>trec_000100</code> (step 100). Every other record has the same shape — only the values change.</p>
+  <pre class="record">{
+  &quot;record_id&quot;: &quot;trec_000100&quot;,
+  &quot;prev_record_hash&quot;: &quot;61956f5d3aa93be4b9a28b665236f333696b1d50f7fb35090b61d87f13c62478&quot;,
+  &quot;chip_id&quot;: &quot;macbook-m3-mps-0&quot;,
+  &quot;job_id&quot;: &quot;laptop-tinygpt-shakespeare-20260429-train&quot;,
+  &quot;operator&quot;: &quot;jason-laptop&quot;,
+  &quot;cluster_region&quot;: &quot;local-mps&quot;,
+  &quot;window_start&quot;: &quot;2026-04-29T05:20:17Z&quot;,
+  &quot;window_end&quot;: &quot;2026-04-29T05:20:24Z&quot;,
+  &quot;op_type&quot;: &quot;training&quot;,
+  &quot;flops&quot;: 78863400960.0,
+  &quot;tokens_processed&quot;: 4096,
+  &quot;batch_size&quot;: 32,
+  &quot;sequence_length&quot;: 128,
+  &quot;steps_in_window&quot;: 1,
+  &quot;model_hash_prefix&quot;: &quot;sha256:546a946947ee7117&quot;,
+  &quot;dataset_fingerprint&quot;: &quot;sha256:86c4e6aa9db7c042&quot;,
+  &quot;upstream_refs&quot;: [],
+  &quot;data_source_tags&quot;: [
+    &quot;corpus:tiny-shakespeare&quot;
+  ],
+  &quot;code_commit&quot;: &quot;git:uncommitted&quot;,
+  &quot;config_hash&quot;: &quot;sha256:e5c700299f416d1f&quot;,
+  &quot;_real_training&quot;: {
+    &quot;step&quot;: 100,
+    &quot;device&quot;: &quot;mps&quot;,
+    &quot;n_params&quot;: 3208960,
+    &quot;loss&quot;: 2.438114643096924,
+    &quot;grad_norm&quot;: 0.8748793918037899,
+    &quot;grad_norms_per_group&quot;: {
+      &quot;embed&quot;: 0.6433745032120131,
+      &quot;blocks&quot;: 0.592670521814345,
+      &quot;head&quot;: 0.0,
+      &quot;ln&quot;: 0.014995045581014391
+    },
+    &quot;data_load_ms&quot;: 0.375,
+    &quot;forward_ms&quot;: 15.045,
+    &quot;backward_ms&quot;: 35.703,
+    &quot;optimizer_ms&quot;: 4.248,
+    &quot;step_time_seconds&quot;: 0.0554,
+    &quot;tokens_per_second&quot;: 73968.1,
+    &quot;learning_rate&quot;: 0.0003,
+    &quot;telemetry&quot;: {
+      &quot;process_rss_mb&quot;: 409.73,
+      &quot;process_cpu_percent&quot;: 0.0,
+      &quot;system_mem_used_pct&quot;: 78.0,
+      &quot;system_load_1m&quot;: 6.830078125,
+      &quot;n_threads&quot;: 5,
+      &quot;mps_allocated_mb&quot;: 51.9,
+      &quot;mps_driver_allocated_mb&quot;: 1172.36
+    },
+    &quot;weight_norms_per_group&quot;: {
+      &quot;embed&quot;: 4.81452909026656,
+      &quot;blocks&quot;: 57.63954299939642,
+      &quot;head&quot;: 0.0,
+      &quot;ln&quot;: 16.323891398408044
+    },
+    &quot;optimizer_state_norms&quot;: {
+      &quot;adam_m_norm&quot;: 0.17301683314321348,
+      &quot;adam_v_norm&quot;: 0.009141902832389968,
+      &quot;tracked_params&quot;: 52
+    },
+    &quot;param_stats_top5&quot;: [
+      {
+        &quot;name&quot;: &quot;blocks.0.mlp.fc.weight&quot;,
+        &quot;n_elements&quot;: 262144,
+        &quot;min&quot;: -0.09455036371946335,
+        &quot;max&quot;: 0.11156687885522842,
+        &quot;mean&quot;: -4.807519871974364e-05,
+        &quot;std&quot;: 0.020357854664325714
+      },
+      {
+        &quot;name&quot;: &quot;blocks.0.mlp.proj.weight&quot;,
+        &quot;n_elements&quot;: 262144,
+        &quot;min&quot;: -0.09520169347524643,
+        &quot;max&quot;: 0.09336082637310028,
+        &quot;mean&quot;: 2.7552780011319555e-05,
+        &quot;std&quot;: 0.02026691660284996
+      },
+      {
+        &quot;name&quot;: &quot;blocks.1.mlp.fc.weight&quot;,
+        &quot;n_elements&quot;: 262144,
+        &quot;min&quot;: -0.09560249000787735,
+        &quot;max&quot;: 0.09568784385919571,
+        &quot;mean&quot;: 3.6317524063633755e-05,
+        &quot;std&quot;: 0.020248133689165115
+      },
+      {
+        &quot;name&quot;: &quot;blocks.1.mlp.proj.weight&quot;,
+        &quot;n_elements&quot;: 262144,
+        &quot;min&quot;: -0.09397336095571518,
+        &quot;max&quot;: 0.09030318260192871,
+        &quot;mean&quot;: -1.1170890502398834e-05,
+        &quot;std&quot;: 0.020231135189533234
+      },
+      {
+        &quot;name&quot;: &quot;blocks.2.mlp.fc.weight&quot;,
+        &quot;n_elements&quot;: 262144,
+        &quot;min&quot;: -0.09070856124162674,
+        &quot;max&quot;: 0.0950947031378746,
+        &quot;mean&quot;: 3.480592567939311e-05,
+        &quot;std&quot;: 0.02026020921766758
+      }
+    ],
+    &quot;sample_input_ids&quot;: [
+      6964862666865179743,
+      1024,
+      1,
+      45,
+      47,
+      60,
+      43,
+      1,
+      63,
+      53,
+      59,
+      10,
+      1,
+      58,
+      46,
+      43,
+      52,
+      1,
+      52,
+      53,
+      1,
+      51,
+      53,
+      56,
+      43,
+      1,
+      56,
+      43,
+      51,
+      39,
+      47,
+      52
+    ],
+    &quot;sample_target_ids&quot;: [
+      6964862666865343583,
+      413760,
+      45,
+      47,
+      60,
+      43,
+      1,
+      63,
+      53,
+      59,
+      10,
+      1,
+      58,
+      46,
+      43,
+      52,
+      1,
+      52,
+      53,
+      1,
+      51,
+      53,
+      56,
+      43,
+      1,
+      56,
+      43,
+      51,
+      39,
+      47,
+      52,
+      57
+    ]
+  }
+}</pre>
+
+  <h2>Field-by-field</h2>
+  <table class="fields">
+    <thead><tr><th>Field</th><th>Meaning</th></tr></thead>
+    <tbody>
+<tr><th>record_id</th><td>Unique ID for this record (monotonic across the run).</td></tr>
+<tr><th>prev_record_hash</th><td>SHA-256 of the previous record&#x27;s canonical JSON. Tampering with any earlier record breaks every later record&#x27;s hash check.</td></tr>
+<tr><th>chip_id</th><td>Identifier for the physical chip producing this record.</td></tr>
+<tr><th>job_id</th><td>Logical training/inference job. The verifier groups records by job_id.</td></tr>
+<tr><th>operator</th><td>The team or principal running the job.</td></tr>
+<tr><th>cluster_region</th><td>Datacenter region (or local-mps for laptop).</td></tr>
+<tr><th>window_start</th><td>ISO 8601 UTC timestamp at the start of the window.</td></tr>
+<tr><th>window_end</th><td>ISO 8601 UTC timestamp at the end of the window.</td></tr>
+<tr><th>op_type</th><td>training | inference | eval | idle. Self-declared; the verifier cross-checks.</td></tr>
+<tr><th>flops</th><td>Floating-point operations performed in this window (estimated 6 × params × tokens for training).</td></tr>
+<tr><th>tokens_processed</th><td>Tokens processed in this window. For training: batch × sequence.</td></tr>
+<tr><th>batch_size</th><td>Number of sequences per training step.</td></tr>
+<tr><th>sequence_length</th><td>Tokens per sequence (block_size).</td></tr>
+<tr><th>steps_in_window</th><td>Number of training steps aggregated into this record.</td></tr>
+<tr><th>model_hash_prefix</th><td>SHA-256 prefix of model parameters. Identifies the model version.</td></tr>
+<tr><th>dataset_fingerprint</th><td>SHA-256 prefix of training data. Detects silent dataset substitution.</td></tr>
+<tr><th>upstream_refs</th><td>IDs of records this one depends on. Forms a provenance DAG.</td></tr>
+<tr><th>data_source_tags</th><td>Labels for the corpus (e.g. &#x27;corpus:tiny-shakespeare&#x27;).</td></tr>
+<tr><th>code_commit</th><td>git short-SHA of the training code at run time.</td></tr>
+<tr><th>config_hash</th><td>SHA-256 of the training config (hyperparameters).</td></tr>
+<tr><th>_real_training</th><td>Per-step nested block (only on training records).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Gradient norm by parameter group</h2>
+  <p>How much each part of the model is learning. Embeddings, transformer blocks, output head, layer norms — tracked separately.</p>
+  
+<svg class="chart" viewBox="0 0 660 200" width="100%"
+     xmlns="http://www.w3.org/2000/svg" role="img" aria-label="grouped grad norms over step">
+  <line x1="44" y1="172" x2="530" y2="172" stroke="#cfc7b6"/>
+  <line x1="44" y1="12" x2="44" y2="172" stroke="#cfc7b6"/>
+  <text x="38" y="18" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">9.06</text>
+  <text x="38" y="176" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">0.00</text>
+  <text x="530" y="190" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">step=200</text>
+  <path d="M 44.0,125.4 L 46.4,139.8 L 48.9,141.1 L 51.3,153.7 L 53.8,154.1 L 56.2,152.5 L 58.7,155.3 L 61.1,152.6 L 63.5,93.2 L 66.0,142.0 L 68.4,146.6 L 70.9,151.0 L 73.3,150.2 L 75.7,149.7 L 78.2,148.1 L 80.6,155.3 L 83.1,154.0 L 85.5,153.5 L 88.0,155.5 L 90.4,155.1 L 92.8,156.0 L 95.3,159.2 L 97.7,156.3 L 100.2,157.6 L 102.6,158.7 L 105.1,157.8 L 107.5,158.7 L 109.9,159.1 L 112.4,159.4 L 114.8,160.2 L 117.3,161.7 L 119.7,157.1 L 122.2,160.1 L 124.6,159.9 L 127.0,161.8 L 129.5,159.1 L 131.9,160.4 L 134.4,162.2 L 136.8,155.3 L 139.2,162.0 L 141.7,161.3 L 144.1,161.5 L 146.6,162.1 L 149.0,162.4 L 151.5,161.3 L 153.9,162.4 L 156.3,162.0 L 158.8,160.4 L 161.2,162.1 L 163.7,162.7 L 166.1,161.9 L 168.6,162.8 L 171.0,161.9 L 173.4,161.1 L 175.9,160.9 L 178.3,161.5 L 180.8,161.1 L 183.2,160.7 L 185.6,162.8 L 188.1,157.1 L 190.5,160.2 L 193.0,156.3 L 195.4,160.9 L 197.9,157.2 L 200.3,162.0 L 202.7,157.7 L 205.2,159.9 L 207.6,159.0 L 210.1,161.6 L 212.5,159.8 L 215.0,158.4 L 217.4,158.0 L 219.8,162.0 L 222.3,159.2 L 224.7,161.0 L 227.2,155.0 L 229.6,158.2 L 232.1,155.5 L 234.5,155.4 L 236.9,161.3 L 239.4,159.7 L 241.8,160.9 L 244.3,161.8 L 246.7,160.2 L 249.1,160.4 L 251.6,162.0 L 254.0,156.7 L 256.5,158.0 L 258.9,161.4 L 261.4,158.7 L 263.8,155.3 L 266.2,159.3 L 268.7,161.2 L 271.1,158.3 L 273.6,159.5 L 276.0,161.1 L 278.5,161.0 L 280.9,161.1 L 283.3,161.7 L 285.8,160.6 L 288.2,160.6 L 290.7,159.9 L 293.1,159.5 L 295.5,160.8 L 298.0,159.7 L 300.4,156.2 L 302.9,157.1 L 305.3,161.2 L 307.8,160.3 L 310.2,161.5 L 312.6,161.8 L 315.1,158.3 L 317.5,161.1 L 320.0,159.4 L 322.4,160.2 L 324.9,158.9 L 327.3,157.8 L 329.7,160.6 L 332.2,159.9 L 334.6,160.3 L 337.1,158.8 L 339.5,159.0 L 341.9,161.9 L 344.4,159.4 L 346.8,161.2 L 349.3,157.6 L 351.7,159.8 L 354.2,158.5 L 356.6,158.4 L 359.0,159.7 L 361.5,156.8 L 363.9,160.7 L 366.4,159.0 L 368.8,162.1 L 371.3,160.8 L 373.7,155.1 L 376.1,159.2 L 378.6,160.0 L 381.0,160.7 L 383.5,162.8 L 385.9,159.9 L 388.4,161.1 L 390.8,161.5 L 393.2,155.5 L 395.7,161.4 L 398.1,158.3 L 400.6,161.3 L 403.0,160.8 L 405.4,155.9 L 407.9,158.3 L 410.3,151.9 L 412.8,156.4 L 415.2,160.9 L 417.7,159.2 L 420.1,159.8 L 422.5,161.1 L 425.0,153.8 L 427.4,157.7 L 429.9,161.4 L 432.3,157.4 L 434.8,157.5 L 437.2,160.4 L 439.6,154.9 L 442.1,159.5 L 444.5,158.3 L 447.0,158.7 L 449.4,160.0 L 451.8,158.8 L 454.3,162.8 L 456.7,156.2 L 459.2,160.4 L 461.6,156.4 L 464.1,159.0 L 466.5,157.2 L 468.9,158.1 L 471.4,159.4 L 473.8,158.5 L 476.3,159.1 L 478.7,159.9 L 481.2,159.1 L 483.6,156.5 L 486.0,159.7 L 488.5,159.1 L 490.9,158.1 L 493.4,159.4 L 495.8,157.7 L 498.3,152.9 L 500.7,158.7 L 503.1,159.5 L 505.6,160.7 L 508.0,159.9 L 510.5,161.3 L 512.9,159.4 L 515.3,156.9 L 517.8,161.2 L 520.2,158.6 L 522.7,156.9 L 525.1,158.4 L 527.6,160.8 L 530.0,158.6" fill="none" stroke="#1c1a17" stroke-width="1.5"/><path d="M 44.0,70.6 L 46.4,139.8 L 48.9,148.6 L 51.3,160.3 L 53.8,162.9 L 56.2,161.8 L 58.7,160.3 L 61.1,148.9 L 63.5,12.0 L 66.0,126.9 L 68.4,134.6 L 70.9,143.1 L 73.3,143.6 L 75.7,145.1 L 78.2,139.5 L 80.6,151.2 L 83.1,148.1 L 85.5,150.0 L 88.0,152.2 L 90.4,154.5 L 92.8,154.1 L 95.3,159.3 L 97.7,154.0 L 100.2,154.5 L 102.6,157.2 L 105.1,156.8 L 107.5,157.5 L 109.9,159.0 L 112.4,157.6 L 114.8,160.0 L 117.3,163.8 L 119.7,153.8 L 122.2,158.9 L 124.6,160.8 L 127.0,162.4 L 129.5,157.5 L 131.9,160.0 L 134.4,163.2 L 136.8,152.4 L 139.2,162.2 L 141.7,160.6 L 144.1,162.9 L 146.6,163.3 L 149.0,161.9 L 151.5,160.2 L 153.9,163.0 L 156.3,163.8 L 158.8,158.4 L 161.2,163.6 L 163.7,163.9 L 166.1,162.3 L 168.6,163.7 L 171.0,161.6 L 173.4,161.9 L 175.9,161.2 L 178.3,161.0 L 180.8,161.3 L 183.2,160.4 L 185.6,163.7 L 188.1,156.9 L 190.5,158.3 L 193.0,156.1 L 195.4,158.3 L 197.9,157.0 L 200.3,163.1 L 202.7,157.8 L 205.2,159.5 L 207.6,158.2 L 210.1,161.1 L 212.5,159.6 L 215.0,158.5 L 217.4,158.3 L 219.8,162.6 L 222.3,158.9 L 224.7,161.9 L 227.2,153.2 L 229.6,158.1 L 232.1,154.6 L 234.5,154.3 L 236.9,160.5 L 239.4,159.3 L 241.8,161.1 L 244.3,161.0 L 246.7,159.5 L 249.1,159.9 L 251.6,161.1 L 254.0,154.8 L 256.5,156.6 L 258.9,162.4 L 261.4,158.1 L 263.8,154.0 L 266.2,159.2 L 268.7,161.4 L 271.1,157.0 L 273.6,160.2 L 276.0,162.3 L 278.5,160.3 L 280.9,160.3 L 283.3,162.5 L 285.8,161.9 L 288.2,161.5 L 290.7,160.0 L 293.1,159.7 L 295.5,162.0 L 298.0,160.7 L 300.4,155.4 L 302.9,158.9 L 305.3,162.0 L 307.8,160.1 L 310.2,162.0 L 312.6,162.0 L 315.1,159.0 L 317.5,160.9 L 320.0,160.4 L 322.4,160.9 L 324.9,157.8 L 327.3,156.9 L 329.7,160.0 L 332.2,160.0 L 334.6,158.9 L 337.1,157.9 L 339.5,159.1 L 341.9,162.0 L 344.4,159.9 L 346.8,162.0 L 349.3,158.7 L 351.7,160.4 L 354.2,160.2 L 356.6,159.5 L 359.0,160.1 L 361.5,157.3 L 363.9,161.3 L 366.4,159.0 L 368.8,162.2 L 371.3,161.3 L 373.7,155.0 L 376.1,159.5 L 378.6,160.5 L 381.0,160.9 L 383.5,163.0 L 385.9,160.1 L 388.4,160.8 L 390.8,161.7 L 393.2,156.0 L 395.7,161.3 L 398.1,158.9 L 400.6,162.0 L 403.0,161.1 L 405.4,156.6 L 407.9,157.2 L 410.3,151.9 L 412.8,156.0 L 415.2,161.2 L 417.7,159.4 L 420.1,159.8 L 422.5,161.2 L 425.0,153.1 L 427.4,157.1 L 429.9,161.8 L 432.3,157.0 L 434.8,156.6 L 437.2,160.4 L 439.6,154.5 L 442.1,159.0 L 444.5,157.6 L 447.0,158.0 L 449.4,159.7 L 451.8,155.7 L 454.3,162.9 L 456.7,155.3 L 459.2,159.1 L 461.6,155.4 L 464.1,156.9 L 466.5,153.7 L 468.9,157.2 L 471.4,158.7 L 473.8,157.2 L 476.3,157.9 L 478.7,160.2 L 481.2,158.2 L 483.6,154.6 L 486.0,158.6 L 488.5,159.1 L 490.9,158.3 L 493.4,158.7 L 495.8,157.1 L 498.3,153.4 L 500.7,158.1 L 503.1,159.1 L 505.6,159.9 L 508.0,158.7 L 510.5,160.3 L 512.9,157.3 L 515.3,155.3 L 517.8,160.3 L 520.2,157.2 L 522.7,155.5 L 525.1,155.8 L 527.6,159.1 L 530.0,156.7" fill="none" stroke="#b83232" stroke-width="1.5"/><path d="M 44.0,172.0 L 46.4,172.0 L 48.9,172.0 L 51.3,172.0 L 53.8,172.0 L 56.2,172.0 L 58.7,172.0 L 61.1,172.0 L 63.5,172.0 L 66.0,172.0 L 68.4,172.0 L 70.9,172.0 L 73.3,172.0 L 75.7,172.0 L 78.2,172.0 L 80.6,172.0 L 83.1,172.0 L 85.5,172.0 L 88.0,172.0 L 90.4,172.0 L 92.8,172.0 L 95.3,172.0 L 97.7,172.0 L 100.2,172.0 L 102.6,172.0 L 105.1,172.0 L 107.5,172.0 L 109.9,172.0 L 112.4,172.0 L 114.8,172.0 L 117.3,172.0 L 119.7,172.0 L 122.2,172.0 L 124.6,172.0 L 127.0,172.0 L 129.5,172.0 L 131.9,172.0 L 134.4,172.0 L 136.8,172.0 L 139.2,172.0 L 141.7,172.0 L 144.1,172.0 L 146.6,172.0 L 149.0,172.0 L 151.5,172.0 L 153.9,172.0 L 156.3,172.0 L 158.8,172.0 L 161.2,172.0 L 163.7,172.0 L 166.1,172.0 L 168.6,172.0 L 171.0,172.0 L 173.4,172.0 L 175.9,172.0 L 178.3,172.0 L 180.8,172.0 L 183.2,172.0 L 185.6,172.0 L 188.1,172.0 L 190.5,172.0 L 193.0,172.0 L 195.4,172.0 L 197.9,172.0 L 200.3,172.0 L 202.7,172.0 L 205.2,172.0 L 207.6,172.0 L 210.1,172.0 L 212.5,172.0 L 215.0,172.0 L 217.4,172.0 L 219.8,172.0 L 222.3,172.0 L 224.7,172.0 L 227.2,172.0 L 229.6,172.0 L 232.1,172.0 L 234.5,172.0 L 236.9,172.0 L 239.4,172.0 L 241.8,172.0 L 244.3,172.0 L 246.7,172.0 L 249.1,172.0 L 251.6,172.0 L 254.0,172.0 L 256.5,172.0 L 258.9,172.0 L 261.4,172.0 L 263.8,172.0 L 266.2,172.0 L 268.7,172.0 L 271.1,172.0 L 273.6,172.0 L 276.0,172.0 L 278.5,172.0 L 280.9,172.0 L 283.3,172.0 L 285.8,172.0 L 288.2,172.0 L 290.7,172.0 L 293.1,172.0 L 295.5,172.0 L 298.0,172.0 L 300.4,172.0 L 302.9,172.0 L 305.3,172.0 L 307.8,172.0 L 310.2,172.0 L 312.6,172.0 L 315.1,172.0 L 317.5,172.0 L 320.0,172.0 L 322.4,172.0 L 324.9,172.0 L 327.3,172.0 L 329.7,172.0 L 332.2,172.0 L 334.6,172.0 L 337.1,172.0 L 339.5,172.0 L 341.9,172.0 L 344.4,172.0 L 346.8,172.0 L 349.3,172.0 L 351.7,172.0 L 354.2,172.0 L 356.6,172.0 L 359.0,172.0 L 361.5,172.0 L 363.9,172.0 L 366.4,172.0 L 368.8,172.0 L 371.3,172.0 L 373.7,172.0 L 376.1,172.0 L 378.6,172.0 L 381.0,172.0 L 383.5,172.0 L 385.9,172.0 L 388.4,172.0 L 390.8,172.0 L 393.2,172.0 L 395.7,172.0 L 398.1,172.0 L 400.6,172.0 L 403.0,172.0 L 405.4,172.0 L 407.9,172.0 L 410.3,172.0 L 412.8,172.0 L 415.2,172.0 L 417.7,172.0 L 420.1,172.0 L 422.5,172.0 L 425.0,172.0 L 427.4,172.0 L 429.9,172.0 L 432.3,172.0 L 434.8,172.0 L 437.2,172.0 L 439.6,172.0 L 442.1,172.0 L 444.5,172.0 L 447.0,172.0 L 449.4,172.0 L 451.8,172.0 L 454.3,172.0 L 456.7,172.0 L 459.2,172.0 L 461.6,172.0 L 464.1,172.0 L 466.5,172.0 L 468.9,172.0 L 471.4,172.0 L 473.8,172.0 L 476.3,172.0 L 478.7,172.0 L 481.2,172.0 L 483.6,172.0 L 486.0,172.0 L 488.5,172.0 L 490.9,172.0 L 493.4,172.0 L 495.8,172.0 L 498.3,172.0 L 500.7,172.0 L 503.1,172.0 L 505.6,172.0 L 508.0,172.0 L 510.5,172.0 L 512.9,172.0 L 515.3,172.0 L 517.8,172.0 L 520.2,172.0 L 522.7,172.0 L 525.1,172.0 L 527.6,172.0 L 530.0,172.0" fill="none" stroke="#1f6b3a" stroke-width="1.5"/><path d="M 44.0,170.5 L 46.4,171.1 L 48.9,171.0 L 51.3,171.4 L 53.8,171.3 L 56.2,171.2 L 58.7,171.3 L 61.1,171.3 L 63.5,170.8 L 66.0,171.0 L 68.4,171.4 L 70.9,171.4 L 73.3,171.2 L 75.7,171.2 L 78.2,171.2 L 80.6,171.3 L 83.1,171.3 L 85.5,171.3 L 88.0,171.3 L 90.4,171.3 L 92.8,171.4 L 95.3,171.4 L 97.7,171.4 L 100.2,171.4 L 102.6,171.4 L 105.1,171.4 L 107.5,171.4 L 109.9,171.5 L 112.4,171.5 L 114.8,171.4 L 117.3,171.4 L 119.7,171.5 L 122.2,171.5 L 124.6,171.5 L 127.0,171.5 L 129.5,171.6 L 131.9,171.6 L 134.4,171.6 L 136.8,171.5 L 139.2,171.6 L 141.7,171.6 L 144.1,171.5 L 146.6,171.6 L 149.0,171.6 L 151.5,171.6 L 153.9,171.7 L 156.3,171.7 L 158.8,171.6 L 161.2,171.7 L 163.7,171.7 L 166.1,171.7 L 168.6,171.6 L 171.0,171.7 L 173.4,171.6 L 175.9,171.6 L 178.3,171.7 L 180.8,171.7 L 183.2,171.7 L 185.6,171.7 L 188.1,171.7 L 190.5,171.6 L 193.0,171.5 L 195.4,171.7 L 197.9,171.7 L 200.3,171.7 L 202.7,171.6 L 205.2,171.6 L 207.6,171.7 L 210.1,171.7 L 212.5,171.6 L 215.0,171.7 L 217.4,171.6 L 219.8,171.7 L 222.3,171.6 L 224.7,171.7 L 227.2,171.6 L 229.6,171.7 L 232.1,171.6 L 234.5,171.6 L 236.9,171.7 L 239.4,171.7 L 241.8,171.7 L 244.3,171.8 L 246.7,171.7 L 249.1,171.7 L 251.6,171.7 L 254.0,171.6 L 256.5,171.7 L 258.9,171.8 L 261.4,171.7 L 263.8,171.8 L 266.2,171.8 L 268.7,171.7 L 271.1,171.6 L 273.6,171.6 L 276.0,171.7 L 278.5,171.8 L 280.9,171.8 L 283.3,171.8 L 285.8,171.8 L 288.2,171.7 L 290.7,171.7 L 293.1,171.7 L 295.5,171.7 L 298.0,171.7 L 300.4,171.8 L 302.9,171.7 L 305.3,171.8 L 307.8,171.7 L 310.2,171.8 L 312.6,171.7 L 315.1,171.7 L 317.5,171.8 L 320.0,171.7 L 322.4,171.7 L 324.9,171.6 L 327.3,171.7 L 329.7,171.7 L 332.2,171.8 L 334.6,171.8 L 337.1,171.7 L 339.5,171.7 L 341.9,171.8 L 344.4,171.8 L 346.8,171.7 L 349.3,171.6 L 351.7,171.7 L 354.2,171.7 L 356.6,171.7 L 359.0,171.8 L 361.5,171.6 L 363.9,171.7 L 366.4,171.7 L 368.8,171.8 L 371.3,171.8 L 373.7,171.7 L 376.1,171.7 L 378.6,171.7 L 381.0,171.7 L 383.5,171.7 L 385.9,171.7 L 388.4,171.7 L 390.8,171.7 L 393.2,171.7 L 395.7,171.7 L 398.1,171.7 L 400.6,171.7 L 403.0,171.7 L 405.4,171.7 L 407.9,171.7 L 410.3,171.6 L 412.8,171.7 L 415.2,171.8 L 417.7,171.8 L 420.1,171.7 L 422.5,171.7 L 425.0,171.6 L 427.4,171.7 L 429.9,171.7 L 432.3,171.7 L 434.8,171.7 L 437.2,171.8 L 439.6,171.7 L 442.1,171.7 L 444.5,171.8 L 447.0,171.7 L 449.4,171.8 L 451.8,171.8 L 454.3,171.8 L 456.7,171.6 L 459.2,171.7 L 461.6,171.7 L 464.1,171.7 L 466.5,171.8 L 468.9,171.8 L 471.4,171.8 L 473.8,171.7 L 476.3,171.7 L 478.7,171.8 L 481.2,171.8 L 483.6,171.7 L 486.0,171.7 L 488.5,171.7 L 490.9,171.7 L 493.4,171.7 L 495.8,171.8 L 498.3,171.7 L 500.7,171.7 L 503.1,171.7 L 505.6,171.7 L 508.0,171.8 L 510.5,171.8 L 512.9,171.8 L 515.3,171.7 L 517.8,171.8 L 520.2,171.7 L 522.7,171.7 L 525.1,171.8 L 527.6,171.8 L 530.0,171.6" fill="none" stroke="#5e574e" stroke-width="1.5"/>
+  <g transform="translate(542,18)"><line x1="0" y1="0" x2="14" y2="0" stroke="#1c1a17" stroke-width="2"/><text x="20" y="4" font-family="ui-monospace,monospace" font-size="11" fill="#5e574e">embed</text></g><g transform="translate(542,36)"><line x1="0" y1="0" x2="14" y2="0" stroke="#b83232" stroke-width="2"/><text x="20" y="4" font-family="ui-monospace,monospace" font-size="11" fill="#5e574e">blocks</text></g><g transform="translate(542,54)"><line x1="0" y1="0" x2="14" y2="0" stroke="#1f6b3a" stroke-width="2"/><text x="20" y="4" font-family="ui-monospace,monospace" font-size="11" fill="#5e574e">head</text></g><g transform="translate(542,72)"><line x1="0" y1="0" x2="14" y2="0" stroke="#5e574e" stroke-width="2"/><text x="20" y="4" font-family="ui-monospace,monospace" font-size="11" fill="#5e574e">ln</text></g>
+</svg>
+
+
+  <h2>Memory profile</h2>
+  <p>Process RSS over the run. Training pre-allocates and stays roughly flat — this profile is one of the strongest training-vs-inference signals.</p>
+  
+<svg class="chart" viewBox="0 0 660 180" width="100%"
+     xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-labelledby="t36565031">
+  <title id="t36565031">RSS MB over step</title>
+  <line x1="44" y1="152" x2="648" y2="152" stroke="#cfc7b6"/>
+  <line x1="44" y1="12" x2="44" y2="152" stroke="#cfc7b6"/>
+  <text x="38" y="18" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">413.56</text>
+  <text x="38" y="156" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">397.89</text>
+  <text x="648" y="170" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e" text-anchor="end">step=200</text>
+  <text x="44" y="170" font-family="ui-monospace,monospace"
+        font-size="10" fill="#5e574e">0</text>
+  <path d="M 44.0,152.0 L 47.0,85.7 L 50.1,84.7 L 53.1,84.2 L 56.1,83.3 L 59.2,82.9 L 62.2,82.5 L 65.2,81.8 L 68.3,81.1 L 71.3,80.3 L 74.4,79.8 L 77.4,78.1 L 80.4,77.6 L 83.5,77.3 L 86.5,76.9 L 89.5,76.6 L 92.6,76.1 L 95.6,75.9 L 98.6,75.8 L 101.7,75.3 L 104.7,74.9 L 107.7,74.6 L 110.8,74.0 L 113.8,73.6 L 116.8,73.1 L 119.9,72.7 L 122.9,72.3 L 125.9,72.0 L 129.0,71.9 L 132.0,71.4 L 135.1,71.1 L 138.1,70.8 L 141.1,70.4 L 144.2,70.2 L 147.2,69.8 L 150.2,69.4 L 153.3,69.1 L 156.3,68.6 L 159.3,68.2 L 162.4,68.4 L 165.4,67.9 L 168.4,67.7 L 171.5,67.1 L 174.5,66.9 L 177.5,66.6 L 180.6,66.0 L 183.6,65.7 L 186.7,65.4 L 189.7,64.9 L 192.7,64.7 L 195.8,64.4 L 198.8,63.5 L 201.8,63.4 L 204.9,63.2 L 207.9,62.7 L 210.9,62.5 L 214.0,62.1 L 217.0,61.9 L 220.0,61.5 L 223.1,61.1 L 226.1,60.9 L 229.1,60.4 L 232.2,59.7 L 235.2,59.6 L 238.3,59.2 L 241.3,58.6 L 244.3,58.3 L 247.4,58.0 L 250.4,57.7 L 253.4,57.4 L 256.5,57.0 L 259.5,56.8 L 262.5,56.4 L 265.6,55.4 L 268.6,55.2 L 271.6,54.8 L 274.7,54.5 L 277.7,54.2 L 280.7,53.8 L 283.8,53.7 L 286.8,53.2 L 289.8,52.7 L 292.9,52.5 L 295.9,52.2 L 299.0,51.8 L 302.0,51.5 L 305.0,51.0 L 308.1,50.7 L 311.1,50.2 L 314.1,50.1 L 317.2,49.7 L 320.2,49.3 L 323.2,48.8 L 326.3,48.5 L 329.3,48.5 L 332.3,48.0 L 335.4,47.7 L 338.4,47.5 L 341.4,47.0 L 344.5,46.8 L 347.5,46.2 L 350.6,45.1 L 353.6,44.9 L 356.6,44.8 L 359.7,44.1 L 362.7,44.0 L 365.7,43.5 L 368.8,43.3 L 371.8,42.8 L 374.8,42.7 L 377.9,42.4 L 380.9,41.8 L 383.9,41.3 L 387.0,41.0 L 390.0,40.9 L 393.0,40.6 L 396.1,40.1 L 399.1,39.8 L 402.2,39.5 L 405.2,39.3 L 408.2,38.9 L 411.3,38.6 L 414.3,38.4 L 417.3,37.8 L 420.4,37.4 L 423.4,36.9 L 426.4,36.7 L 429.5,36.3 L 432.5,35.9 L 435.5,35.7 L 438.6,35.3 L 441.6,34.9 L 444.6,34.6 L 447.7,34.3 L 450.7,34.2 L 453.7,33.6 L 456.8,33.4 L 459.8,32.9 L 462.9,32.5 L 465.9,32.4 L 468.9,31.9 L 472.0,31.8 L 475.0,31.4 L 478.0,31.1 L 481.1,30.7 L 484.1,30.2 L 487.1,30.0 L 490.2,29.7 L 493.2,29.3 L 496.2,29.2 L 499.3,28.4 L 502.3,27.9 L 505.3,27.5 L 508.4,27.0 L 511.4,26.7 L 514.5,26.4 L 517.5,25.8 L 520.5,25.5 L 523.6,25.2 L 526.6,24.9 L 529.6,24.4 L 532.7,24.2 L 535.7,23.7 L 538.7,23.4 L 541.8,23.2 L 544.8,22.5 L 547.8,22.3 L 550.9,22.0 L 553.9,21.7 L 556.9,21.5 L 560.0,20.9 L 563.0,20.8 L 566.1,20.5 L 569.1,20.2 L 572.1,20.5 L 575.2,19.8 L 578.2,19.7 L 581.2,19.5 L 584.3,19.0 L 587.3,18.8 L 590.3,18.4 L 593.4,18.3 L 596.4,17.8 L 599.4,17.5 L 602.5,17.3 L 605.5,16.7 L 608.5,16.3 L 611.6,15.8 L 614.6,15.3 L 617.6,15.2 L 620.7,14.6 L 623.7,14.5 L 626.8,14.2 L 629.8,14.0 L 632.8,13.6 L 635.9,13.3 L 638.9,13.1 L 641.9,12.7 L 645.0,12.3 L 648.0,12.0 L 648.0,152 L 44.0,152 Z" fill="#1f6b3a" fill-opacity="0.08"/>
+  <path d="M 44.0,152.0 L 47.0,85.7 L 50.1,84.7 L 53.1,84.2 L 56.1,83.3 L 59.2,82.9 L 62.2,82.5 L 65.2,81.8 L 68.3,81.1 L 71.3,80.3 L 74.4,79.8 L 77.4,78.1 L 80.4,77.6 L 83.5,77.3 L 86.5,76.9 L 89.5,76.6 L 92.6,76.1 L 95.6,75.9 L 98.6,75.8 L 101.7,75.3 L 104.7,74.9 L 107.7,74.6 L 110.8,74.0 L 113.8,73.6 L 116.8,73.1 L 119.9,72.7 L 122.9,72.3 L 125.9,72.0 L 129.0,71.9 L 132.0,71.4 L 135.1,71.1 L 138.1,70.8 L 141.1,70.4 L 144.2,70.2 L 147.2,69.8 L 150.2,69.4 L 153.3,69.1 L 156.3,68.6 L 159.3,68.2 L 162.4,68.4 L 165.4,67.9 L 168.4,67.7 L 171.5,67.1 L 174.5,66.9 L 177.5,66.6 L 180.6,66.0 L 183.6,65.7 L 186.7,65.4 L 189.7,64.9 L 192.7,64.7 L 195.8,64.4 L 198.8,63.5 L 201.8,63.4 L 204.9,63.2 L 207.9,62.7 L 210.9,62.5 L 214.0,62.1 L 217.0,61.9 L 220.0,61.5 L 223.1,61.1 L 226.1,60.9 L 229.1,60.4 L 232.2,59.7 L 235.2,59.6 L 238.3,59.2 L 241.3,58.6 L 244.3,58.3 L 247.4,58.0 L 250.4,57.7 L 253.4,57.4 L 256.5,57.0 L 259.5,56.8 L 262.5,56.4 L 265.6,55.4 L 268.6,55.2 L 271.6,54.8 L 274.7,54.5 L 277.7,54.2 L 280.7,53.8 L 283.8,53.7 L 286.8,53.2 L 289.8,52.7 L 292.9,52.5 L 295.9,52.2 L 299.0,51.8 L 302.0,51.5 L 305.0,51.0 L 308.1,50.7 L 311.1,50.2 L 314.1,50.1 L 317.2,49.7 L 320.2,49.3 L 323.2,48.8 L 326.3,48.5 L 329.3,48.5 L 332.3,48.0 L 335.4,47.7 L 338.4,47.5 L 341.4,47.0 L 344.5,46.8 L 347.5,46.2 L 350.6,45.1 L 353.6,44.9 L 356.6,44.8 L 359.7,44.1 L 362.7,44.0 L 365.7,43.5 L 368.8,43.3 L 371.8,42.8 L 374.8,42.7 L 377.9,42.4 L 380.9,41.8 L 383.9,41.3 L 387.0,41.0 L 390.0,40.9 L 393.0,40.6 L 396.1,40.1 L 399.1,39.8 L 402.2,39.5 L 405.2,39.3 L 408.2,38.9 L 411.3,38.6 L 414.3,38.4 L 417.3,37.8 L 420.4,37.4 L 423.4,36.9 L 426.4,36.7 L 429.5,36.3 L 432.5,35.9 L 435.5,35.7 L 438.6,35.3 L 441.6,34.9 L 444.6,34.6 L 447.7,34.3 L 450.7,34.2 L 453.7,33.6 L 456.8,33.4 L 459.8,32.9 L 462.9,32.5 L 465.9,32.4 L 468.9,31.9 L 472.0,31.8 L 475.0,31.4 L 478.0,31.1 L 481.1,30.7 L 484.1,30.2 L 487.1,30.0 L 490.2,29.7 L 493.2,29.3 L 496.2,29.2 L 499.3,28.4 L 502.3,27.9 L 505.3,27.5 L 508.4,27.0 L 511.4,26.7 L 514.5,26.4 L 517.5,25.8 L 520.5,25.5 L 523.6,25.2 L 526.6,24.9 L 529.6,24.4 L 532.7,24.2 L 535.7,23.7 L 538.7,23.4 L 541.8,23.2 L 544.8,22.5 L 547.8,22.3 L 550.9,22.0 L 553.9,21.7 L 556.9,21.5 L 560.0,20.9 L 563.0,20.8 L 566.1,20.5 L 569.1,20.2 L 572.1,20.5 L 575.2,19.8 L 578.2,19.7 L 581.2,19.5 L 584.3,19.0 L 587.3,18.8 L 590.3,18.4 L 593.4,18.3 L 596.4,17.8 L 599.4,17.5 L 602.5,17.3 L 605.5,16.7 L 608.5,16.3 L 611.6,15.8 L 614.6,15.3 L 617.6,15.2 L 620.7,14.6 L 623.7,14.5 L 626.8,14.2 L 629.8,14.0 L 632.8,13.6 L 635.9,13.3 L 638.9,13.1 L 641.9,12.7 L 645.0,12.3 L 648.0,12.0" fill="none" stroke="#1f6b3a" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
+
+
+  <h2>The hash chain</h2>
+  <p>Each record's <code>prev_record_hash</code> is the SHA-256 of the previous record's canonical JSON. The chain restarts at <code>00000000…00000000</code> for each run. Tampering with any record breaks every record after it. This is what lets the verifier audit the trace without re-reading the full history.</p>
+
+  <div class="note">
+    <strong>What's not captured here.</strong> Multi-host gradient sync, DCGM tensor-core utilization, per-GPU power draw, hardware attestation. The single-chip laptop run is the proof of concept; closing the gap to frontier verification is what the Verifier Challenge funds. <a href="frontier-gap.html">Read the gap</a>.
+  </div>
+
+  <hr>
+  <p style="font-family: var(--mono); font-size: 12px; color: var(--ink-soft);">
+    <span class="tag">live</span>
+    Generated mid-training at step 200. The full run continues to step ? and is then handed to a Claude verifier. <a href="agent.html">See the verifier</a>.
+  </p>
+</main>
+</body>
+</html>

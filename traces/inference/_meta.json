@@ -1,0 +1,47 @@
+{
+  "system_fingerprint": {
+    "captured_at": "2026-04-29T05:25:03Z",
+    "hostname": "Mac.localdomain",
+    "platform": "macOS-26.2-arm64-arm-64bit-Mach-O",
+    "python_version": "3.13.5",
+    "torch_version": "2.11.0",
+    "cpu_count": 12,
+    "ram_total_gb": 36.0,
+    "mps_available": true,
+    "cuda_available": false
+  },
+  "config": {
+    "vocab_size": 65,
+    "block_size": 128,
+    "n_layer": 4,
+    "n_head": 4,
+    "n_embd": 256,
+    "dropout": 0.0,
+    "batch_size": 32,
+    "lr": 0.0003,
+    "seed": 1337
+  },
+  "identity": {
+    "job_id": "laptop-tinygpt-shakespeare-20260429-infer",
+    "operator": "jason-laptop",
+    "chip_id": "macbook-m3-mps-0",
+    "cluster_region": "local-mps",
+    "model_hash_prefix": "sha256:d12a960b3e4883ee",
+    "config_hash": "sha256:e5c700299f416d1f",
+    "dataset_fingerprint": "sha256:user-requests-pool",
+    "code_commit": "git:ae01a94"
+  },
+  "totals": {
+    "n_prompts": 4,
+    "max_tokens_per_prompt": 80,
+    "raw_records": 320,
+    "summary_records": 1,
+    "estimated_total_flops": 2053734400.0,
+    "tokens_processed": 320,
+    "wall_seconds": 9.49
+  },
+  "params": {
+    "temperature": 0.8,
+    "top_k": 10
+  }
+}

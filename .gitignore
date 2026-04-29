@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+.python-version
+
+# Trace artifacts (regenerable)
+traces/training/raw.jsonl
+traces/training/raw.jsonl.gz
+traces/training/checkpoint_*.pt
+traces/inference/raw.jsonl
+traces/inference/raw.jsonl.gz
+
+# Local env
+.env
+.env.local
+.DS_Store

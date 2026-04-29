@@ -1,0 +1,34 @@
+[project]
+name = "inspector-mvp"
+version = "0.1.0"
+description = "MVP of an AI verifier — Claude reads raw GPT logs to infer training-vs-inference and FLOP-threshold compliance. Proof-of-concept for the Verifier Challenge."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Jason Hausenloy", email = "jasonhausenloy@gmail.com" },
+    { name = "Jasmine Li" },
+]
+license = { text = "MIT" }
+dependencies = [
+    "anthropic>=0.92.0",
+    "torch>=2.4.0",
+    "psutil>=5.9.0",
+    "pydantic>=2.0.0",
+    "numpy>=1.26.0",
+    "pyyaml>=6.0.0",
+    "rich>=13.0.0",
+]
+
+[project.urls]
+Homepage = "https://jason.ml/inspector"
+Repository = "https://github.com/jasonhausenloy/inspector-agents"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["inspector_v2"]
+
+[dependency-groups]
+dev = []
