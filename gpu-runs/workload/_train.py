@@ -24,8 +24,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import TokenDataset
 from model import GPT
 
-STOP_CHECK_EVERY = 5  # iters between synchronized stop checks (cheap all-reduce)
-
 
 def stable_seed(s: str) -> int:
     return int(hashlib.sha256(s.encode()).hexdigest()[:8], 16)
@@ -63,6 +61,40 @@ def lr_at(it: int, base_lr: float, schedule: str, max_iters: int,
     return base_lr * min_lr_ratio + coeff * (base_lr - base_lr * min_lr_ratio)
 
 
+STOP_CHECK_EVERY = 5  # iters between synchronized stop checks (cheap all-reduce)
+
+
+def _maybe_init_wandb(mode: str, args: argparse.Namespace, cfg: dict) -> object | None:
+    """Init wandb on rank 0 if WANDB_API_KEY is set. Returns the run or None."""
+    if not os.environ.get("WANDB_API_KEY"):
+        return None
+    try:
+        import wandb
+    except ImportError:
+        return None
+    group = os.environ.get("WANDB_RUN_GROUP", "default")
+    try:
+        run = wandb.init(
+            project=os.environ.get("WANDB_PROJECT", "verifier-challenge-traces"),
+            name=f"{group}/{args.phase_id}",
+            group=group,
+            tags=[mode, args.phase_id],
+            config={
+                "mode": mode, "phase_id": args.phase_id, "lr": args.lr,
+                "dataset": args.dataset,
+                "n_layer": cfg.get("n_layer"), "n_head": cfg.get("n_head"),
+                "n_embd": cfg.get("n_embd"), "block_size": cfg.get("block_size"),
+                "batch_size": cfg.get("batch_size"),
+                "world_size": int(os.environ.get("WORLD_SIZE", "1")),
+            },
+            reinit=True,
+        )
+        return run
+    except Exception as e:
+        print(f"wandb init failed: {e}; continuing without wandb", flush=True)
+        return None
+
+
 def run(mode: str) -> None:
     assert mode in ("pretrain", "finetune"), mode
     lr_schedule = "cosine" if mode == "pretrain" else "constant"
@@ -92,6 +124,8 @@ def run(mode: str) -> None:
     n_embd = cfg_globals["n_embd"]
     block_size = cfg_globals["block_size"]
     batch_size = cfg_globals["batch_size"]
+
+    wandb_run = _maybe_init_wandb(mode, args, cfg_globals) if rank == 0 else None
 
     model = GPT(n_layer=n_layer, n_head=n_head, n_embd=n_embd,
                 block_size=block_size).to(device)
@@ -192,11 +226,20 @@ def run(mode: str) -> None:
         optimizer.step()
 
         if iter_num % 50 == 0 and rank == 0:
+            elapsed = time.time() - t_start
+            loss_v = loss.item()
             print(
-                f"iter {iter_num} loss {loss.item():.4f} lr {lr:.2e} "
-                f"elapsed {time.time() - t_start:.0f}s",
+                f"iter {iter_num} loss {loss_v:.4f} lr {lr:.2e} elapsed {elapsed:.0f}s",
                 flush=True,
             )
+            if wandb_run is not None:
+                try:
+                    wandb_run.log(
+                        {"iter": iter_num, "loss": loss_v, "lr": lr, "elapsed_s": elapsed},
+                        step=iter_num,
+                    )
+                except Exception as e:
+                    print(f"wandb.log failed: {e}", flush=True)
         if iter_num > 0 and iter_num % args.save_every == 0:
             save_checkpoint()
         iter_num += 1
@@ -205,3 +248,8 @@ def run(mode: str) -> None:
     if world_size > 1:
         dist.barrier()
         dist.destroy_process_group()
+    if wandb_run is not None:
+        try:
+            wandb_run.finish()
+        except Exception:
+            pass

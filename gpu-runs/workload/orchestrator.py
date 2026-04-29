@@ -254,6 +254,10 @@ def main() -> None:
     os.dup2(log_fh.fileno(), 2)
     log_fh.close()
 
+    # Group all phases of this host's run under one wandb group; child
+    # processes pick this up via env. No-op if WANDB_API_KEY is unset.
+    os.environ.setdefault("WANDB_RUN_GROUP", run_id)
+
     print(f"=== orchestrator start, run_id={run_id} ===", flush=True)
     print(f"out_dir={out_dir}", flush=True)
 

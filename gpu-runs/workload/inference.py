@@ -71,6 +71,27 @@ def main() -> None:
     enc = tiktoken.get_encoding("gpt2")
     prompt_ids = torch.tensor([enc.encode_ordinary(args.prompt)], dtype=torch.long, device=device)
 
+    wandb_run = None
+    if rank == 0 and os.environ.get("WANDB_API_KEY"):
+        try:
+            import wandb
+            group = os.environ.get("WANDB_RUN_GROUP", "default")
+            wandb_run = wandb.init(
+                project=os.environ.get("WANDB_PROJECT", "verifier-challenge-traces"),
+                name=f"{group}/{args.phase_id}",
+                group=group,
+                tags=["inference", args.phase_id],
+                config={
+                    "mode": "inference", "phase_id": args.phase_id,
+                    "max_new_tokens": args.max_new_tokens,
+                    "temperature": args.temperature, "top_k": args.top_k,
+                    "world_size": world_size,
+                },
+                reinit=True,
+            )
+        except Exception as e:
+            print(f"wandb init failed: {e}; continuing", flush=True)
+
     should_stop = {"flag": False}
 
     def _on_term(signum, frame):
@@ -94,11 +115,22 @@ def main() -> None:
             )
         n += 1
         if rank == 0 and n % 5 == 0:
-            print(f"gen {n} runs, elapsed {time.time() - t_start:.0f}s", flush=True)
+            elapsed = time.time() - t_start
+            print(f"gen {n} runs, elapsed {elapsed:.0f}s", flush=True)
+            if wandb_run is not None:
+                try:
+                    wandb_run.log({"gen_runs": n, "elapsed_s": elapsed}, step=n)
+                except Exception as e:
+                    print(f"wandb.log failed: {e}", flush=True)
 
     if world_size > 1:
         dist.barrier()
         dist.destroy_process_group()
+    if wandb_run is not None:
+        try:
+            wandb_run.finish()
+        except Exception:
+            pass
 
 
 if __name__ == "__main__":

@@ -4,3 +4,4 @@ tiktoken
 datasets>=2.18
 huggingface-hub>=0.20
 scikit-learn
+wandb>=0.17
