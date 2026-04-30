@@ -1,8 +1,17 @@
 """Local dev server for inspector-blog.html with in-place editing.
 
 Serves repo files normally and exposes POST /save-blog, which accepts
-{"html": "<article inner html>"} and writes it back into
-inspector-blog.html (between the existing <article> and </article> tags).
+{"html": "<article inner html>", "prev_hash": "<sha256 of last-known
+article inner>"} and writes the new inner HTML back into
+inspector-blog.html (between the existing <article> and </article>
+tags), but only if prev_hash matches the file's current article hash.
+A mismatch returns 409 Conflict, which the in-page editor uses to
+detect stale tabs and stop overwriting fresher content.
+
+To make the hash check work, GETs of inspector-blog.html inject the
+current article-inner SHA-256 as a `data-prev-hash` attribute on
+`<article>`. The browser-side script reads that attribute and sends it
+back on every save.
 
 Run:
     python3 edit_server.py [port]
@@ -14,6 +23,7 @@ URLs:
 
 from __future__ import annotations
 
+import hashlib
 import http.server
 import json
 import re
@@ -29,14 +39,47 @@ ARTICLE_RE = re.compile(r"(<article>)(.*?)(</article>)", re.DOTALL)
 SAVE_LOCK = threading.Lock()
 
 
+def _hash_inner(inner: str) -> str:
+    return hashlib.sha256(inner.encode("utf-8")).hexdigest()
+
+
+def _read_article_inner() -> tuple[str, str]:
+    """Return (full file text, article inner content). Raises if not found."""
+    text = BLOG_FILE.read_text(encoding="utf-8")
+    match = ARTICLE_RE.search(text)
+    if match is None:
+        raise RuntimeError(f"no <article> tag in {BLOG_FILE}")
+    return text, match.group(2)
+
+
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, directory=str(REPO_ROOT), **kwargs)
 
     def end_headers(self) -> None:
-        # Disable caching so edits are picked up on reload.
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
+
+    def do_GET(self) -> None:
+        if urlparse(self.path).path == "/inspector-blog.html":
+            self._serve_blog_with_hash()
+            return
+        super().do_GET()
+
+    def _serve_blog_with_hash(self) -> None:
+        text, inner = _read_article_inner()
+        digest = _hash_inner(inner)
+        injected = text.replace(
+            "<article>",
+            f'<article data-prev-hash="{digest}">',
+            1,
+        )
+        body = injected.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_POST(self) -> None:
         if urlparse(self.path).path != "/save-blog":
@@ -54,22 +97,42 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if not isinstance(new_inner, str):
             self.send_error(400, "'html' must be a string")
             return
+        prev_hash = data.get("prev_hash")
+        if not isinstance(prev_hash, str) or not prev_hash:
+            self.send_error(400, "'prev_hash' must be a non-empty string")
+            return
 
         with SAVE_LOCK:
-            current = BLOG_FILE.read_text(encoding="utf-8")
-            updated, count = ARTICLE_RE.subn(
+            current_text, current_inner = _read_article_inner()
+            current_hash = _hash_inner(current_inner)
+            if current_hash != prev_hash:
+                self._reply_json(
+                    409,
+                    {
+                        "ok": False,
+                        "error": "stale: file modified since this tab loaded",
+                        "current_hash": current_hash,
+                    },
+                )
+                return
+
+            updated = ARTICLE_RE.sub(
                 lambda m: m.group(1) + new_inner + m.group(3),
-                current,
+                current_text,
                 count=1,
             )
-            if count != 1:
-                self.send_error(500, "could not locate <article> in source")
-                return
             BLOG_FILE.write_text(updated, encoding="utf-8")
+            new_hash = _hash_inner(new_inner)
             byte_count = len(updated.encode("utf-8"))
 
-        body = json.dumps({"ok": True, "bytes": byte_count}).encode("utf-8")
-        self.send_response(200)
+        self._reply_json(
+            200,
+            {"ok": True, "bytes": byte_count, "new_hash": new_hash},
+        )
+
+    def _reply_json(self, status: int, payload: dict) -> None:
+        body = json.dumps(payload).encode("utf-8")
+        self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()

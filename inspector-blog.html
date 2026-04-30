@@ -827,14 +827,18 @@
 
 <script>
 // Edit mode: append ?edit=1 to the URL to make the article contenteditable.
-// Edits debounce for 600 ms, then POST to /save-blog, which rewrites this
-// file in place. Served by edit_server.py.
+// Each save sends the article's prev_hash (read from data-prev-hash, set by
+// edit_server.py on GET) so the server can reject stale-tab saves with 409.
+// On 409 the editor disables itself until the page is refreshed — this is
+// what prevents an old tab from clobbering edits made by a newer tab.
 (function() {
   const params = new URLSearchParams(location.search);
   if (params.get('edit') !== '1') return;
 
   const article = document.querySelector('article');
   if (!article) return;
+
+  let prevHash = article.dataset.prevHash || '';
   article.setAttribute('contenteditable', 'true');
   article.setAttribute('spellcheck', 'true');
   article.classList.add('edit-mode');
@@ -861,13 +865,14 @@
     #edit-status[data-state="saving"]  { background: #b07a20; color: #faf6ec; }
     #edit-status[data-state="saved"]   { background: #3a7a3a; color: #faf6ec; }
     #edit-status[data-state="error"]   { background: #c0392b; color: #faf6ec; }
+    #edit-status[data-state="stale"]   { background: #c0392b; color: #faf6ec; }
   `;
   document.head.appendChild(css);
 
   const status = document.createElement('div');
   status.id = 'edit-status';
   status.dataset.state = 'idle';
-  status.textContent = 'edit mode';
+  status.textContent = prevHash ? 'edit mode' : 'edit mode (no hash — saves disabled)';
   document.body.appendChild(status);
 
   const setState = (state, text) => {
@@ -878,8 +883,20 @@
   let debounce = null;
   let inFlight = false;
   let pending = false;
+  let stale = false;
+
+  const goStale = (msg) => {
+    stale = true;
+    article.removeAttribute('contenteditable');
+    setState('stale', msg);
+  };
+
+  if (!prevHash) {
+    goStale('NO HASH — REFRESH TAB');
+  }
 
   const save = async () => {
+    if (stale) return;
     if (inFlight) { pending = true; return; }
     inFlight = true;
     setState('saving', 'saving…');
@@ -888,34 +905,43 @@
       const res = await fetch('/save-blog', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html }),
+        body: JSON.stringify({ html, prev_hash: prevHash }),
       });
+      if (res.status === 409) {
+        goStale('STALE TAB — REFRESH');
+        return;
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      const data = await res.json();
+      if (data && data.new_hash) prevHash = data.new_hash;
       setState('saved', 'saved');
     } catch (err) {
       console.error('save failed', err);
       setState('error', 'save failed');
     } finally {
       inFlight = false;
-      if (pending) { pending = false; save(); }
+      if (pending && !stale) { pending = false; save(); }
     }
   };
 
   article.addEventListener('input', () => {
+    if (stale) return;
     if (debounce) clearTimeout(debounce);
     setState('editing', 'editing…');
     debounce = setTimeout(save, 600);
   });
 
-  // Force a flush before unload so a quick close doesn't drop the last edit.
+  // Flush a pending edit on tab close. Skip when stale so we don't beacon a
+  // doomed save (the server would 409 it anyway, but no point trying).
   window.addEventListener('beforeunload', () => {
+    if (stale) return;
     if (debounce) {
       clearTimeout(debounce);
       const html = article.innerHTML;
       navigator.sendBeacon &&
         navigator.sendBeacon(
           '/save-blog',
-          new Blob([JSON.stringify({ html })], { type: 'application/json' })
+          new Blob([JSON.stringify({ html, prev_hash: prevHash })], { type: 'application/json' })
         );
     }
   });
