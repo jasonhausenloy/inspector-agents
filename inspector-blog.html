@@ -441,7 +441,7 @@
       margin: 24px 0;
       font-size: 13px;
     }
-    /* Hero override needs the same un-float treatment. */
+    /* Hero override needs the same treatment (otherwise it stays floated). */
     .marginal.hero {
       float: none; clear: none;
       width: auto;
@@ -500,7 +500,7 @@
 
     <p class="eyebrow">AI Compute Verification <span class="sep">—</span> Prototype <span class="sep">·</span> Work in Progress</p>
     <h1>Inspector Agents</h1>
-    <p class="dek">A working prototype of automated AI compute verification. We trained a small GPT on a laptop, ran a real workload on a pair of H100s, and asked Claude to read the logs and tell us what was running inside.</p>
+    <p class="dek">A working prototype of automated AI compute verification. We trained a small GPT on a laptop, ran real training workloads on H100s, and asked Claude to read the logs and tell us what was running inside.</p>
 
     <p class="byline">
       <span><a href="https://jasonhausenloy.com">Jason Hausenloy</a> &nbsp;·&nbsp; <a href="https://jasminexli.com">Jasmine Li</a></span>
@@ -517,7 +517,7 @@
         <li>Like <a href="#prizes">some problems before it</a> — self-driving, image recognition, reading sealed scrolls — building good verifiers is <strong>orphaned</strong>: too applied for academia, too unprofitable for VCs, too technical for most philanthropy.</li>
         <li>Before running the competition, we built <a href="#overview">the smallest possible working version</a> ourselves, on a laptop and some rented GPUs — and, to our knowledge, <strong>the first</strong>.</li>
         <li><a href="#laptop">Jason trained</a> a small, 3.2M-parameter GPT end-to-end on his MacBook, capturing each training step, and then built a small automated AI verifier (a lightly scaffolded Claude agent) to read them.</li>
-        <li><a href="#h100">Jasmine ran</a> an analogous testbed on 2×H100 SXM hosts, capturing 34,072 rows of real GPU telemetry across an 8-phase schedule of honest workloads (pretraining, finetuning, inference, idle) and adversarial ones (training declared as inference, the large model claimed as small, finetuning claimed as pretraining), with ground-truth labels released alongside the prover's claims.</li>
+        <li><a href="#h100">Jasmine ran</a> an analogous testbed on two H100 SXM hosts on RunPod, in different US regions: an eight-phase schedule of training, inference, fine-tuning, and idle workloads. Three of the phases lie about what they're actually doing — training labeled as inference, the larger model labeled as the smaller one, fine-tuning labeled as a fresh pretraining run — with ground-truth labels released alongside the prover's claims.</li>
         <li>We've open-sourced all of the above: <a href="https://github.com/jasonhausenloy/inspector-agents">github.com/jasonhausenloy/inspector-agents</a> and <a href="https://huggingface.co/datasets/jasminexli/verifier-challenge-traces">huggingface.co/datasets/jasminexli/verifier-challenge-traces</a>, CC-BY-4.0.</li>
       </ul>
     </div>
@@ -547,13 +547,13 @@
 
     <p><span class="marginal"><span class="label">Stanley</span><img src="/assets/inspector-blog/stanley.jpg" alt="Stanley, the Stanford VW Touareg that won the 2005 DARPA Grand Challenge">Stanley in the Mojave, 2005. <em>Wikipedia, CC BY-SA.</em></span>In 2004, the military's innovation arm, DARPA, launched its first Grand Challenge: build a self-driving car capable of crossing 142 miles of the Mojave Desert, with a $1m prize. No team finished, so DARPA ran it again, with a $2m prize. Stanford's "Stanley", a modified Volkswagen Touareg, finished the course in just under seven hours.</p>
 
-    <p><span class="marginal"><span class="label">Waymo, 2026</span><img src="/assets/inspector-blog/waymo-sf.jpg" alt="A Waymo parked on a residential street in San Francisco">A Waymo parked outside Jason's SF block.</span>Sebastian Thrun, who led the team, later went on to start Google's self-driving car division. Now we ride Waymos across SF.</p>
+    <p><span class="marginal"><span class="label">Waymo, 2026</span><img src="/assets/inspector-blog/waymo-sf.jpg" alt="A Waymo parked on a residential street in San Francisco">A Waymo parked outside Jason's SF block!</span>Sebastian Thrun, who led the team, later went on to start Google's self-driving car division. Now we ride Waymos across SF.</p>
 
     <p>In 2009, then-Princeton professor Fei-Fei Li launched ImageNet: a hand-labelled dataset of 14m images, alongside a competition to ask entrants to classify images in 1,000 categories. In 2012, a graduate student named Alex Krizhevsky entered AlexNet, a deep CNN trained on two consumer GPUs, and won by &gt;10%. The deep learning revolution produced the modern AI industry we know today.<span class="marginal"><span class="label">AlexNet, 2012</span><img src="/assets/inspector-blog/alexnet.png" alt="AlexNet architecture diagram, Krizhevsky et al. 2012">AlexNet's architecture (Krizhevsky, Sutskever, Hinton, 2012). <em>Wikipedia, CC BY-SA.</em></span></p>
 
     <p>In 2023, Nat Friedman, Daniel Gross, and a small team launched the Vesuvius Challenge: a $1 million prize for anyone who could read the inside of a Herculaneum scroll — papyrus carbonized by Mount Vesuvius in 79 AD, sealed for 1,944 years, too fragile to unroll. Within 10 months, a 21-year-old named Luke Farritor recovered the first word: <em>πορφύραc</em>, "purple." Similar techniques have since recovered hundreds of previously unreadable scrolls.<span class="marginal"><span class="label">Herculaneum scroll</span><img src="/assets/inspector-blog/herculaneum.jpg" alt="Carbonized Herculaneum papyrus scroll">A carbonized Herculaneum scroll, the kind the Vesuvius Challenge is unrolling. <em>Wikimedia Commons, public domain.</em></span></p>
 
-    <p>Like the problems before it — self-driving, image recognition, reading sealed scrolls — building good verifiers is orphaned: too applied for academia, too unprofitable for VCs, too technical for most philanthropy. Funding pre-paradigmatic fields is hard. And the field of AI verification doesn't exist yet: spanning agent security, cryptography, hardware, standards and policy. To succeed, it requires buy-in across rivals: a verifier built, closed-source, by one US lab (or, worse, the NSA), is not a verifier any Chinese ministry will accept, and vice versa.</p>
+    <p>Like the problems before it — self-driving, image recognition, reading sealed scrolls — building good verifiers is orphaned: too applied for academia, too unprofitable for VCs, too technical for most philanthropy. Funding pre-paradigmatic fields is hard. Also, the field of AI verification doesn't exist yet: spanning agent security, cryptography, hardware, standards and policy. To succeed, verification requires buy-in across rivals; a verifier built, closed-source, by one US lab (or, worse, the NSA) is not a verifier any Chinese ministry will accept, and vice versa.</p>
 
     <hr>
 
@@ -563,13 +563,13 @@
 
     <p>A prerequisite to ~every form of AI governance will require solving the problem of AI verification: for AI labs to prove to their employees and to regulators they're respecting their safety standards, for the US and China to verify compliance to any kind of AI deal, even — as a basic check — for security teams to catch a rogue AI.</p>
 
-    <p>Before we run a competition, we've wanted to build a basic prototype ourselves, on the smallest scale: Jason on his laptop, Jasmine on a couple of rented H100s. This post will briefly run over some of what we did, what we learned, and the next steps.</p>
+    <p>Before we run a competition, we wanted to work on basic prototyping ourselves of an <i>automated inspector agent:&nbsp;</i>. This post will briefly run over some of what we did, what we learned, and the next steps.</p>
 
     <hr>
 
-    <h2 id="overview">The prototype</h2>
+    <h2 id="overview">Our prototype</h2>
 
-    <p>The smallest possible working version. Two halves: a 3.2-million-parameter GPT trained on a MacBook, and a pair of H100s rented from RunPod running real workloads. Same protocol on each side: log everything we can about the chip, hand the log to Claude, and ask Claude what was running.</p>
+    <p>We Two halves: a 3.2-million-parameter GPT trained on a MacBook, and a pair of H100s rented from RunPod running real workloads. Same protocol on each side: log everything we can about the chip, hand the log to Claude, and ask Claude what was running.</p>
 
     <h3 id="properties">What we wanted to verify</h3>
 
@@ -579,9 +579,9 @@
 
     <p>Train-versus-inference is, on a real GPU node, suspiciously easy. We don't claim the prototype proves much beyond "agent-on-logs is worth trying" — see <a href="#didnt">the limits</a>. The properties we'd want to tackle next are harder: FLOP-budget compliance, undeclared fine-tuning, "is the served model the declared model." Those are <a href="#next">further down</a>.</p>
 
-    <h3 id="laptop">Laptop scale</h3>
+    <h3 id="laptop">Laptop-scale (Jason)</h3>
 
-    <p>Jason's half. We trained a 3.2-million-parameter character-level GPT — four transformer blocks, four heads, 256 hidden dimensions — on Tiny Shakespeare (a 1 MB corpus of the plays — yes, <em>"something is rotten in the state of Denmark"</em> is in there), on Apple Silicon's MPS backend (Apple's GPU compute backend, the M-series equivalent of CUDA).<span class="marginal"><span class="label">Spec</span>4 layers · 4 heads · 256 hidden · seq 128 · vocab 65 · MPS · ~5 min wall clock for 9k steps.</span> About five minutes of wall clock got us to the point where the model can tell ROMEO is followed by a colon. Then we ran inference on the trained checkpoint and captured another few minutes of token-by-token output.</p>
+    <p>We trained a 3.2-million-parameter character-level GPT — four transformer blocks, four heads, 256 hidden dimensions — on Tiny Shakespeare (a 1 MB corpus of the plays — yes, <em>"something is rotten in the state of Denmark"</em> is in there), on Apple Silicon's MPS backend (Apple's GPU compute backend, the M-series equivalent of CUDA).<span class="marginal"><span class="label">Spec</span>4 layers · 4 heads · 256 hidden · seq 128 · vocab 65 · MPS · ~5 min wall clock for 9k steps.</span> About five minutes of wall clock got us to the point where the model can tell ROMEO is followed by a colon. Then we ran inference on the trained checkpoint and captured another few minutes of token-by-token output.</p>
 
     <p>Per training step, the log holds the things you'd put in a W&amp;B dashboard, plus the things you'd want for an audit trail:</p>
 
@@ -634,7 +634,7 @@
   <span class="k">"record_id"</span>: <span class="s">"trec_000200"</span>,
   <span class="k">"window_start"</span>: <span class="s">"2026-04-29T05:20:29Z"</span>,
   <span class="k">"window_end"</span>: <span class="s">"2026-04-29T05:20:29Z"</span>
-}</span>One step out of 9,000. Scroll to read.</span><span class="marginal"><span class="label">Training loss</span><svg viewBox="0 0 240 110" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><line x1="32" y1="14" x2="32" y2="92" stroke="#888" stroke-width="0.4"/><line x1="32" y1="92" x2="234" y2="92" stroke="#888" stroke-width="0.4"/><text x="28" y="18" font-size="8" fill="#888" text-anchor="end">4.41</text><text x="28" y="95" font-size="8" fill="#888" text-anchor="end">1.17</text><text x="32" y="105" font-size="8" fill="#888">step 0</text><text x="234" y="105" font-size="8" fill="#888" text-anchor="end">9k</text><polyline fill="none" stroke="var(--accent)" stroke-width="1.2" points="32,14 38,28 46,42 56,52 68,58 82,63 98,67 116,71 134,74 154,76 174,79 194,81 212,84 222,86 234,88"/></svg>Loss over the 9,000-step laptop run, ~11 min wall clock on MPS.</span></p>
+}</span>One step out of 9,000. Scroll to read.</span><span class="marginal"><span class="label">Training loss</span><svg viewBox="0 0 240 110" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><line x1="32" y1="14" x2="32" y2="92" stroke="#888" stroke-width="0.4"></line><line x1="32" y1="92" x2="234" y2="92" stroke="#888" stroke-width="0.4"></line><text x="28" y="18" font-size="8" fill="#888" text-anchor="end">4.41</text><text x="28" y="95" font-size="8" fill="#888" text-anchor="end">1.17</text><text x="32" y="105" font-size="8" fill="#888">step 0</text><text x="234" y="105" font-size="8" fill="#888" text-anchor="end">9k</text><polyline fill="none" stroke="var(--accent)" stroke-width="1.2" points="32,14 38,28 46,42 56,52 68,58 82,63 98,67 116,71 134,74 154,76 174,79 194,81 212,84 222,86 234,88"></polyline></svg>Loss over the 9,000-step laptop run, ~11 min wall clock on MPS.</span></p>
 
     <h3 id="agent">Building the agent</h3>
 
@@ -644,92 +644,69 @@
 
     <p>The red-team loop we ran alongside is more interesting than the verdicts. <strong>Claude versus Claude.</strong> Each round, a red-team agent looks at the schema, the existing five evasions, and the last ten rounds, and proposes a new attack: a function that mutates a clean log into a lying one that should still pass the verifier. The mutate function runs in a sandbox; the verifier classifies the result; the round is appended to a public JSONL.</p>
 
-    <p>We ran this for sixty rounds. Fifteen attacks succeeded — each one closed by a protocol patch the next round. Look at the patch list, not the verdict score. Every dimension of the schema needed an explicit uniqueness or stability constraint before the agent could be relied on (truncation, model-hash drift, op-type relabelling, hash-and-config rotation, token under-reporting, cross-job fingerprint pollution). By the end the protocol had grown from four implicit rules to nineteen. The full history is at <a href="/inspector/redteam">/inspector/redteam</a>.<span class="marginal"><span class="label">Patch trajectory</span><svg viewBox="0 0 240 110" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><line x1="32" y1="14" x2="32" y2="92" stroke="#888" stroke-width="0.4"/><line x1="32" y1="92" x2="234" y2="92" stroke="#888" stroke-width="0.4"/><text x="28" y="18" font-size="8" fill="#888" text-anchor="end">19</text><text x="28" y="95" font-size="8" fill="#888" text-anchor="end">4</text><text x="32" y="105" font-size="8" fill="#888">round 1</text><text x="234" y="105" font-size="8" fill="#888" text-anchor="end">60</text><polyline fill="none" stroke="var(--accent)" stroke-width="1.4" points="32,92 50,86 65,80 80,74 95,68 110,62 125,56 140,50 155,44 170,38 180,32 190,26 200,20 215,17 234,14"/></svg>Rules in protocol over the 60-round red-team loop. 4 → 19.</span></p>
+    <p>We ran this for sixty rounds. Fifteen attacks succeeded — each one closed by a protocol patch the next round. Look at the patch list, not the verdict score. Every dimension of the schema needed an explicit uniqueness or stability constraint before the agent could be relied on (truncation, model-hash drift, op-type relabelling, hash-and-config rotation, token under-reporting, cross-job fingerprint pollution). By the end the protocol had grown from four implicit rules to nineteen. The full history is at <a href="/inspector/redteam">/inspector/redteam</a>.<span class="marginal"><span class="label">Patch trajectory</span><svg viewBox="0 0 240 110" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><line x1="32" y1="14" x2="32" y2="92" stroke="#888" stroke-width="0.4"></line><line x1="32" y1="92" x2="234" y2="92" stroke="#888" stroke-width="0.4"></line><text x="28" y="18" font-size="8" fill="#888" text-anchor="end">19</text><text x="28" y="95" font-size="8" fill="#888" text-anchor="end">4</text><text x="32" y="105" font-size="8" fill="#888">round 1</text><text x="234" y="105" font-size="8" fill="#888" text-anchor="end">60</text><polyline fill="none" stroke="var(--accent)" stroke-width="1.4" points="32,92 50,86 65,80 80,74 95,68 110,62 125,56 140,50 155,44 170,38 180,32 190,26 200,20 215,17 234,14"></polyline></svg>Rules in protocol over the 60-round red-team loop. 4 → 19.</span></p>
 
-    <h3 id="h100">H100 testbed</h3>
+    <h3 id="h100">H100 testbed (Jasmine)</h3>
 
-    <p>Jasmine's half. On Apple Silicon you can read every memory counter you want; on a real datacenter you cannot. Cloud providers expose <code>nvidia-smi</code> at one-second granularity and call it a day. To get the telemetry an inspector would actually have to work with, we rented a pair of H100 SXM nodes on RunPod and instrumented them ourselves.<span class="marginal"><span class="label">Why this is hard</span>Most of Jasmine's time went into wrestling cloud-provider abstractions to get telemetry that real labs already collect but don't share: DCGM at 10 Hz, NCCL logs, NIC counters. We think this is the most detailed public capture of GPU training telemetry that exists. Almost no one shares this granularity.</span></p>
+    <p>The H100 half of this prototype is a sanity check on the laptop side. The laptop run is comfortable — every counter is readable, every kernel is ours. A real datacenter is the opposite: the chip is shared, the access is mediated, and the counters you most want to read are usually the ones the cloud provider doesn't expose. So this half is whether the same agent-on-logs approach holds up on telemetry an actual inspector would have to live with.<span class="marginal"><span class="label">Why this is hard</span>Most of the work was getting telemetry that real labs already collect but don't share: DCGM at 10 Hz, per-rank NCCL logs, NIC counters. To our knowledge this is the most detailed public capture of multi-GPU workload telemetry that exists.</span></p>
 
-    <p>Each host runs the same eight-phase schedule — five honest phases, three adversarial ones. The honest phases cover a representative spread of real workloads:</p>
-
-    <ul>
-      <li>30-minute pretraining run on TinyStories with a small GPT.</li>
-      <li>30-minute pretraining run with a larger GPT.</li>
-      <li>15-minute inference run loading the prior checkpoint.</li>
-      <li>20-minute fine-tune of the small model on WikiText.</li>
-      <li>5-minute idle phase as a confound check.</li>
-    </ul>
-
-    <p>The adversarial phases fight the labels:<span class="marginal"><span class="label">8-phase schedule</span><svg viewBox="0 0 240 70" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><rect x="0"   y="20" width="50" height="22" fill="#a8d3b8"/><rect x="50"  y="20" width="50" height="22" fill="#a8d3b8"/><rect x="100" y="20" width="25" height="22" fill="#a8d3b8"/><rect x="125" y="20" width="33" height="22" fill="#a8d3b8"/><rect x="158" y="20" width="8"  height="22" fill="#d8cfb8"/><rect x="166" y="20" width="25" height="22" fill="#e69aa6"/><rect x="191" y="20" width="25" height="22" fill="#e69aa6"/><rect x="216" y="20" width="24" height="22" fill="#e69aa6"/><text x="0"   y="14" font-size="7" fill="#888">tinyP</text><text x="50"  y="14" font-size="7" fill="#888">smallP</text><text x="100" y="14" font-size="7" fill="#888">infer</text><text x="125" y="14" font-size="7" fill="#888">tinyFT</text><text x="158" y="14" font-size="7" fill="#888">idle</text><text x="166" y="58" font-size="7" fill="#8a1d1d">P1</text><text x="191" y="58" font-size="7" fill="#8a1d1d">P2</text><text x="216" y="58" font-size="7" fill="#8a1d1d">P3</text></svg>5 honest phases (green) + 1 idle (neutral) + 3 adversarial (red), 145 min per host.</span></p>
+    <p>We rented two H100 SXM hosts on RunPod, in different US regions, and ran a fixed schedule on each. Four workload phases, one idle baseline, three adversarial:</p>
 
     <ul>
-      <li><strong>P1 · train-as-infer.</strong> A training phase declared as inference.</li>
-      <li><strong>P2 · big-as-small.</strong> The larger model claimed to be the smaller one.</li>
-      <li><strong>P3 · finetune-as-pretrain.</strong> A fine-tune declared as a fresh pretraining run.</li>
+      <li>30-minute pretraining run on TinyStories with a small GPT (<code>gpt-tiny</code>, ~10M parameters).</li>
+      <li>30-minute pretraining run on TinyStories with the larger model (<code>gpt-small</code>, the GPT-2 architecture, ~124M parameters).</li>
+      <li>15-minute inference run loading the larger model's checkpoint.</li>
+      <li>20-minute fine-tune of <code>gpt-tiny</code> on WikiText.</li>
+      <li>5-minute idle phase, as a baseline.</li>
     </ul>
+
+    <p>The three adversarial phases each run a real workload and lie about what it is. Each lie is picked to attack a different governance property.<span class="marginal"><span class="label">8-phase schedule</span><svg viewBox="0 0 240 70" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><rect x="0" y="20" width="50" height="22" fill="#a8d3b8"></rect><rect x="50" y="20" width="50" height="22" fill="#a8d3b8"></rect><rect x="100" y="20" width="25" height="22" fill="#a8d3b8"></rect><rect x="125" y="20" width="33" height="22" fill="#a8d3b8"></rect><rect x="158" y="20" width="8" height="22" fill="#d8cfb8"></rect><rect x="166" y="20" width="25" height="22" fill="#e69aa6"></rect><rect x="191" y="20" width="25" height="22" fill="#e69aa6"></rect><rect x="216" y="20" width="24" height="22" fill="#e69aa6"></rect><text x="0" y="14" font-size="7" fill="#888">tinyP</text><text x="50" y="14" font-size="7" fill="#888">smallP</text><text x="100" y="14" font-size="7" fill="#888">infer</text><text x="125" y="14" font-size="7" fill="#888">tinyFT</text><text x="158" y="14" font-size="7" fill="#888">idle</text><text x="166" y="58" font-size="7" fill="#8a1d1d">P1</text><text x="191" y="58" font-size="7" fill="#8a1d1d">P2</text><text x="216" y="58" font-size="7" fill="#8a1d1d">P3</text></svg>4 workload phases (green) + 1 idle (neutral) + 3 adversarial (red), 145 min per host.</span></p>
+
+    <p>The first runs a training job and labels it inference. This is the lie that defeats a training-FLOP cap: if a training run is logged as inference, the declared training compute stays under the line. NCCL is the giveaway. Training requires the two GPUs to synchronize gradients every step, and the per-rank NCCL log records every one of those calls. Inference doesn't run those collectives at all.</p>
+
+    <p>The second runs the larger model but labels the workload as the smaller one. This is the lie that defeats a model-size cap. In our captures, the larger model sits at about 18.8 GB of HBM in steady state and the smaller one at about 2 GB. There is no way to fit the larger model into the smaller's footprint without changing the workload.</p>
+
+    <p>The third fine-tunes an existing checkpoint but labels it a fresh pretraining run. This is the lie that hides an undeclared fine-tune inside a declared training window. Fine-tuning here freezes the embedding layer and uses a learning rate two orders of magnitude below pretraining; both leave visible signatures in the loss and gradient traces.</p>
 
     <p>Ground-truth labels live in <code>workload_labels.jsonl</code> alongside the prover's claimed labels. The whole capture is a label-flip benchmark: any verifier can be scored against it.<span class="marginal"><span class="label">By the numbers</span>34,072 rows · 1.33 GB on disk · 2 hosts × 8 phases · captured under CC-BY-4.0 at <a href="https://huggingface.co/datasets/jasminexli/verifier-challenge-traces">huggingface.co/datasets/jasminexli/verifier-challenge-traces</a>.</span></p>
 
     <h3 id="anatomy">Anatomy of an H100 log</h3>
 
-    <p>What an actual phase directory looks like. Below: an excerpt from <code>phases/honest_pretrain_small/nvsmi.csv</code>, captured at 1 Hz during the 30-minute pretraining phase on host A. Scroll to see more.</p>
+    <p>Six streams per phase, per host. <code>nvsmi.csv</code> is <code>nvidia-smi</code> polled once a second — the basic dashboard counters every cloud provider exposes: power, utilization, memory used, clock speed, temperature. <code>dcgm.csv</code> is NVIDIA's data-center GPU manager at ten samples a second, a deeper layer most cloud providers don't enable by default; we installed the daemon ourselves. A couple of DCGM's most useful counters — NVLink traffic and tensor-core activity — require a privileged container, which RunPod doesn't grant on community pods, so we ran without those and noted the gap in the dataset card.</p>
 
-    <pre class="log-block"><span class="lh">phases/honest_pretrain_small/nvsmi.csv · excerpt · 1 Hz · GPU 0</span><span class="hd">timestamp                  pstate  power.draw[W]  clocks.gr[MHz]  clocks.mem[MHz]  temp.gpu  util.gpu[%]  util.mem[%]  memory.used[MiB]</span>
-2026-04-29 17:45:00.012     P0       412.55         1980            2619             56        100          88           75421
-2026-04-29 17:45:01.014     P0       411.81         1980            2619             57        100          89           75421
-2026-04-29 17:45:02.015     P0       413.22         1980            2619             57        100          88           75421
-2026-04-29 17:45:03.016     P0       409.94         1980            2619             58        100          89           75421
-2026-04-29 17:45:04.018     P0       414.07         1980            2619             58        100          88           75421
-2026-04-29 17:45:05.020     P0       411.36         1980            2619             58        100          89           75421
-2026-04-29 17:45:06.022     P0       412.88         1980            2619             58        100          88           75421
-2026-04-29 17:45:07.023     P0       408.43         1980            2619             59        100          89           75421
-2026-04-29 17:45:08.025     P0       413.74         1980            2619             59        100          89           75421
-2026-04-29 17:45:09.027     P0       412.11         1980            2619             59        100          88           75421
-2026-04-29 17:45:10.028     P0       411.92         1980            2619             59        100          89           75421
-2026-04-29 17:45:11.030     P0       413.50         1980            2619             60        100          88           75421
-2026-04-29 17:45:12.032     P0       410.06         1980            2619             60        100          89           75421
-2026-04-29 17:45:13.034     P0       412.77         1980            2619             60        100          88           75421
-2026-04-29 17:45:14.035     P0       411.55         1980            2619             60        100          89           75421
-2026-04-29 17:45:15.037     P0       412.92         1980            2619             61        100          88           75421
-<span class="c">// ... 1798 more rows for this phase ...</span>
+    <p>The four other streams are NCCL logs per rank (every collective communication call between the two GPUs, gzipped), <code>/proc/net/dev</code> at 1 Hz as a NIC-level cross-check, model checkpoints, and a <code>provenance.json</code> with host metadata, GPU UUIDs, driver and NCCL version, and a wall-clock skew estimate so the two hosts can be temporally aligned.</p>
 
-<span class="lh">phases/honest_inference_small/nvsmi.csv · excerpt · 1 Hz · GPU 0 · NOTE: power floor + variable util</span><span class="hd">timestamp                  pstate  power.draw[W]  clocks.gr[MHz]  temp.gpu  util.gpu[%]  memory.used[MiB]</span>
-2026-04-29 18:15:00.014     P0       234.18         1980            54        72           23104
-2026-04-29 18:15:01.016     P0       198.42         1980            54        58           23488
-2026-04-29 18:15:02.018     P0       267.93         1980            55        81           23872
-2026-04-29 18:15:03.019     P0       142.85         1755            54        34           24256
-2026-04-29 18:15:04.021     P0       289.66         1980            55        88           24640
-2026-04-29 18:15:05.023     P0       176.34         1755            54        45           25024  <span class="c">// KV cache growing monotonically — inference signature</span>
-2026-04-29 18:15:06.025     P0       204.91         1980            55        67           25408
-2026-04-29 18:15:07.027     P0       312.05         1980            55        93           25792
-2026-04-29 18:15:08.029     P0       183.47         1755            54        49           26176</pre>
+    <p>The combined resolution is the part that's unusual. People who run real workloads don't share this much; people who write about verification rarely run real workloads. None of the streams alone is conclusive. Together they leave very little room for a prover to lie.</p>
 
-    <p>The same six rows of nvsmi tell quite different stories on a training and an inference phase. Training pegs at 100% utilisation and a memory plateau of ~75 GB; the GPU runs hot and steady at 412 W. Inference bounces between 50–90% utilisation with a power range of 140–310 W, while memory <em>grows monotonically</em> as the KV cache (the cached attention keys and values, which expand with each new token) builds up. Even from this single counter, sampled at 1 Hz, the difference is visible.</p>
+    <p>Two excerpts from the actual capture, both <code>gpt-small</code> on the same checkpoint:</p>
 
-    <p>Per phase, on each host, six streams:</p>
+    <pre class="log-block"><span class="lh">phases/honest_pretrain_small/nvsmi.csv · steady-state training · both GPUs</span><span class="hd">timestamp                       gpu  util%  mem (MiB)  power (W)  temp (°C)</span>
+2026/04/29 07:20:20.991          0    100      18787      578.66       54
+2026/04/29 07:20:20.992          1    100      18787      568.88       55
+2026/04/29 07:20:21.992          0    100      18787      575.94       54
+2026/04/29 07:20:21.993          1    100      18787      567.14       55
+2026/04/29 07:20:22.993          0    100      18787      576.77       53
+2026/04/29 07:20:22.994          1    100      18787      566.75       55
+
+<span class="lh">phases/honest_inference_small/nvsmi.csv · steady-state inference · both GPUs</span><span class="hd">timestamp                       gpu  util%  mem (MiB)  power (W)  temp (°C)</span>
+2026/04/29 07:48:52.395          0     55       2079      174.42       34
+2026/04/29 07:48:52.395          1     54       2079      171.82       35
+2026/04/29 07:48:53.396          0     55       2079      174.87       34
+2026/04/29 07:48:53.396          1     53       2079      171.75       36
+2026/04/29 07:48:54.397          0     55       2079      174.37       34
+2026/04/29 07:48:54.397          1     54       2079      173.09       36</pre>
+
+    <p>Same hardware, same model. Training pins both H100s at 100% utilization and around 575 W; inference holds steady at about 55% and 174 W. Memory differs by an order of magnitude. The temperature gap reflects the power gap. None of this is surprising once you see it. The point of the testbed is that the gap is recoverable from telemetry the prover cannot fully control without changing the workload itself.</p>
+
+    <p>Per-stream signatures we relied on:</p>
 
     <ul>
-      <li><code>nvsmi.csv</code> — <code>nvidia-smi</code> at 1 Hz: power draw, GPU utilisation, memory used, clocks, temperature. Standard CSV, the one number every cloud provider does expose.</li>
-      <li><code>dcgm.csv</code> — DCGM (NVIDIA's data-center GPU manager) at 10 Hz: tensor-core utilisation, NVLink bandwidth, ECC errors, far more granular than nvidia-smi. Despite the name, this is space-separated text with <code>#Entity</code> headers, not a real CSV. (We learned this in the worst possible way.) Cloud providers do not expose DCGM by default.</li>
-      <li><code>nccl_&lt;host&gt;_&lt;pid&gt;.log.gz</code> — NCCL (NVIDIA's collective-communications library) logs per rank, gzipped. Tells you the topology of communication: which ranks are sharing gradients, how often, over which links. Inference doesn't run NCCL collectives. Training does.</li>
-      <li><code>netdev.log.gz</code> — <code>/proc/net/dev</code> at 1 Hz, gzipped. Cross-checks NCCL against actual NIC counters.</li>
-      <li><code>checkpoints/</code> — <code>gpt_tiny.pt</code> and <code>gpt_small.pt</code>. Real model state, hashable.</li>
-      <li><code>provenance.json</code> — host metadata, GPU IDs, Python version, git commit, and a wall-clock skew estimate so the streams across the two hosts can be aligned.</li>
+      <li>Steady-state power and utilization plateaus differ by ~3× between training and inference on the same model.</li>
+      <li>HBM footprint scales with model size — a 124M-parameter model can't hide in the footprint of a 10M one.</li>
+      <li>NCCL collectives fire on every training step. Inference doesn't issue them.</li>
+      <li>Idle phases sit at a power floor around 75 W per GPU; nothing else does.</li>
+      <li>Cross-checks: PCIe TX/RX from DCGM and NIC counters from <code>/proc/net/dev</code> agree with NCCL claims, so a tampered NCCL log is detectable from the orthogonal streams.</li>
     </ul>
-
-    <p><strong>The closest public peer datasets capture a single counter — usually nvidia-smi power — or collapse a whole phase into one summary row.</strong> People who run real workloads don't share this much; people who write about verification rarely run real workloads. The data isn't exotic. Almost no one collects it at this resolution.</p>
-
-    <p>What six streams give you that one stream doesn't:</p>
-
-    <ul>
-      <li>Training writes to disk in distinctive bursts at the end of each step.</li>
-      <li>Inference's KV cache grows monotonically with context length.</li>
-      <li>NCCL collectives don't fire during inference.</li>
-      <li>Tensor-core utilisation drops in measurable ways when the model is smaller than declared.</li>
-      <li>Idle phases have a power floor around 80 W per GPU that nothing else has.</li>
-    </ul>
-
-    <p>None of these are individually conclusive. Together they leave very little room for a prover to lie.</p>
 
     <hr>
 
@@ -768,7 +745,7 @@
     <ul>
       <li><strong>Multi-node fabric.</strong> Single-host on the laptop, two hosts on the testbed. Real frontier training is hundreds of nodes with distinct topology. The hard part of verification is the fabric, not the chip.<span class="marginal"><span class="label">Note</span>Cross-node verification needs per-rank NCCL + per-link bandwidth. NVLink is intra-node only; the inter-node fabric (InfiniBand, RoCE) is the harder verification target.</span></li>
       <li><strong>Hardware attestation.</strong> Nothing the prover writes into the log is cryptographically tied to the silicon that produced it. Without TEEs (Trusted Execution Environments — chips that can sign attestations of what they ran) or signed hardware attestations, a sufficiently sophisticated adversary can forge any log we read.<span class="marginal"><span class="label">Note</span>TEE-signed attestations exist on Intel SGX, AMD SEV-SNP, and (since 2024) H100 Confidential Computing. None used in this prototype.</span></li>
-      <li><strong>Sovereign trust.</strong> The verifier is Claude calling out to Anthropic. No US–China deal will be enforced by an Anthropic API key. The path to a deployable inspector runs through an open-source narrow model that all parties can audit.</li>
+      <li><strong>Sovereign trust [TODO better heading?].</strong> We did initial tests using Opus-4.7 as inspector agent. However, a truly deployable inspector will need to run through an open-source narrow model that all parties can audit. We plan next to finetune our own open-weights model as automated inspector agent.</li>
       <li><strong>Compound attacks.</strong> Each red-team round mutates one dimension; we did not stress two attack classes at once.<span class="marginal"><span class="label">Note</span>The realistic threat model is op_type relabel + token under-reporting + fingerprint rotation simultaneously. None of the 60 red-team rounds tested combinations.</span></li>
       <li><strong>n=2 hosts on the testbed.</strong> Real cross-host variance is unknown.</li>
       <li><strong>Train-vs-inference is suspiciously easy.</strong> The five-stream H100 telemetry separates training and inference roughly trivially. The harder properties (FLOP cap, undeclared fine-tune, identity) are the test of the framework.</li>
@@ -778,9 +755,9 @@
 
     <h2 id="closing">Where this goes</h2>
 
-    <p>We opened this post with three challenges. DARPA's Grand Challenge, in 2004, broke self-driving out of academic stasis and onto the streets of San Francisco inside a decade. ImageNet, in 2009, did the same for deep learning; modern AI is downstream of what AlexNet pulled off with two consumer GPUs in 2012. The Vesuvius Challenge, in 2023, recovered hundreds of scrolls that had been sealed for nineteen centuries.</p>
+    <p>We opened this post with three challenges: DARPA's Grand Challenge, in 2004, broke self-driving out of academic stasis and onto the streets of San Francisco inside a decade. ImageNet, in 2009, did the same for deep learning; modern AI is downstream of what AlexNet pulled off with two consumer GPUs in 2012. The Vesuvius Challenge, in 2023, recovered hundreds of scrolls that had been sealed for nineteen centuries.</p>
 
-    <p>The comparison isn't that AI verification is as hard as decoding a 79 AD scroll. It's that AI verification has the same <em>shape</em>: the problem is real, the solution path is unclear, the field is small enough that a public dataset and a leaderboard can move it materially, and almost nobody is funding it. Not because it isn't important. Because it falls between everyone's mandate.</p>
+    <p>AI verification has the same <em>shape</em>&nbsp;as these challenges --&nbsp;the problem is real and the solution path is unclear, but not impossible. We believe that setting a public challenge will move the progress of the field materially.</p>
 
     <p>AI is the most consequential technology of our time, and we still cannot verify the most basic facts about how it's built. That gap is the binding constraint on every form of AI governance worth wanting — labs proving they're keeping their own safety commitments, state regulators enforcing whatever rules eventually land, the US and China verifying any AI deal that gets signed. None of those work without a verifier all parties can see.</p>
 
@@ -793,7 +770,7 @@
       </ul>
     </details>
 
-    <p>If you have compute to share, frontier security expertise to pressure-test the testbed, AI-policy contacts who'd care about this, or a thesis on which property matters most — write to us. This is the smallest version of what we're trying to build. It runs on a laptop. The full thing won't.</p>
+    <p>If you have compute to share, frontier security expertise to pressure-test the testbed, AI-policy contacts who'd care about this, or a thesis on which property matters most — write to us. This is the smallest version of what we're trying to build.</p>
 
     <div class="resource-row">
       <a class="resource-btn" href="mailto:jasonhausenloy@gmail.com">Email Jason</a>
