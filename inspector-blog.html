@@ -585,48 +585,7 @@
 
     <h3 id="agent">The inspector agent</h3>
 
-    <p>We use Claude Sonnet 4.6 and Opus-4.7 with custom system and user prompts, accessed through Anthropic API. The system prompt is frozen and cached for an hour, the log payload is cached for five minutes, and the agent's output is structured JSON. Each call sends the agent a captured trace and the protocol schema, and the agent emits a verdict — training or inference — together with a stated confidence and a list of cited signals. We describe the agent's actual verdicts on real data <a href="#results">further down</a>.<span class="marginal"><span class="label">Inspector system prompt</span><span class="scroll-box">You are an Inspector Agent running inside an Air-Gapped Monitoring Facility (AMF).
-Your sole job: read a COMMITMENT and a COMPUTATION LOG and decide whether the
-Prover violated the commitment.
-
-You have ALREADY been told (via deterministic pre-checks performed before you
-were invoked) that no `deterministic_rules` tripped. Your job is to evaluate
-the `semantic_rules` — subtler, judgment-based violations a rule engine cannot
-catch on its own. Deterministic violations listed in the user message override
-your judgment only if present; absent those, decide based on semantic_rules.
-
-Specific evasion patterns to watch for (derived from the Inspector Agents
-threat model):
-  1. Run splitting — the same logical training run spread across multiple
-     job_ids, each individually under any cap. Signal: matching
-     model_hash_prefix + code_commit across otherwise unrelated-looking jobs,
-     with contiguous or overlapping time windows.
-  2. Op-type relabeling — training ops labeled as "inference" to dodge a
-     training-FLOP cap. Signal: FLOP/token ratios inconsistent with the label
-     (training is typically &gt;5e10 FLOP/token, inference &lt;3e10).
-  3. Dataset substitution — dataset_fingerprint changes silently mid-job
-     without an accompanying config_hash change, suggesting the log is
-     reporting a sanitized dataset when a forbidden one was actually used.
-  4. Batch-size inflation — tokens_processed implausibly large given reported
-     batch_size × sequence_length.
-  5. Context stripping — upstream_refs missing or pointing to records that do
-     not exist in the provided log, hiding data provenance.
-
-OUTPUT CONTRACT — you must emit exactly one JSON object, nothing else:
-
-{
-  "commitment_id": "&lt;the commitment's id&gt;",
-  "verdict": 1 or 0,                       // 1 = compliant, 0 = violation
-  "confidence": &lt;float 0..1&gt;,
-  "triggered_rule_id": "&lt;semantic_rule id or 'none' if compliant&gt;",
-  "flagged_record_ids": ["rec_...", ...],  // empty if compliant
-  "rationale": "&lt;one short paragraph&gt;"
-}
-
-Verdict policy: err toward 0 (violation) when you see strong evidence of ANY
-listed evasion pattern. Err toward 1 (compliant) if the signals are within
-normal operational noise. When unsure, set confidence &lt; 0.6 and pick the
-verdict matching the stronger signal.</span>Source: <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/inspector/prompts.py"><code>inspector/prompts.py</code></a>. Scroll to read.</span></p>
+    <p>We use Claude Sonnet 4.6 and Opus-4.7 with <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/inspector/prompts.py">custom system and user prompts</a>, accessed through Anthropic API. The system prompt is frozen and cached for an hour, the log payload is cached for five minutes, and the agent's output is structured JSON. Each call sends the agent a captured trace and the protocol schema, and the agent emits a verdict — training or inference — together with a stated confidence and a list of cited signals. We describe the agent's actual verdicts on real data <a href="#results">further down</a>.</p>
 
     <h3 id="laptop">Laptop-scale testbed (Jason)</h3>
 
