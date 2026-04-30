@@ -436,13 +436,26 @@
       display: block;
     }
     .marginal {
+      float: none; clear: none;
       position: static; right: auto; width: auto;
       margin: 24px 0;
       font-size: 13px;
     }
+    /* Hero override needs the same un-float treatment. */
+    .marginal.hero {
+      float: none; clear: none;
+      width: auto;
+      margin: 24px 0 18px 0;
+    }
+    .marginal img {
+      max-width: 360px;
+    }
     .marginal .placeholder-box {
       max-width: 360px;
       aspect-ratio: 4 / 3;
+    }
+    .marginal .scroll-box {
+      max-width: 100%;
     }
     article h1 { font-size: 36px; }
     article h2 { font-size: 26px; }
