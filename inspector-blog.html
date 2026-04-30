@@ -776,9 +776,14 @@
     <details class="plan">
       <summary>Show our phased plan</summary>
       <ul>
-        <li><strong>Phase 1, May–June (~$25k for compute, travel).</strong> Stand up a datacenter-scale MVP on a rented 8×H100 node — retrain GPT-2, capture the full multi-stream log, get the verifier reading real workloads. Begin collaborations with RAND, MIRI, DARPA, the State Department, the Frontier Model Forum, and the major cloud providers, to figure out which verification properties are actually load-bearing. Stretch goal: present the MVP at ISE 2026 in Singapore (a US–China AI governance exchange, May 17–19) and meet Chinese researchers in person.</li>
-        <li><strong>Phase 2, June–September (~$70k for compute, talent).</strong> Lock the testbed for three-to-five challenge types — training-run attestation, training-vs-inference classification, undeclared-workload detection, FLOP-budget compliance, model-identity. Specify the scoring function and the adversarial budget. Send to frontier-lab security researchers to break before we publish.</li>
-        <li><strong>Phase 3, October ($50k–$500k for prize, marketing, judging).</strong> Public Verifier Challenge launch. Open competition, prize pool, public leaderboard. The one we open the doors on.</li>
+        <li><strong>Phase 1: Foundations (May–June; $50k for compute, travel).</strong>
+          <ul>
+            <li><strong>Collaborations.</strong> Speak with RAND, MIRI, the State Department, DARPA, and Chinese researchers (e.g. at ISE 2026 in Singapore) on useful verification properties. Approach cloud providers, NVIDIA, and the Frontier Model Forum about sponsoring compute for participants and our logging standard.</li>
+            <li><strong>Build a small datacenter-scale MVP.</strong> Rent many nodes, run mixed training and inference workloads, build the infrastructure to capture full logs.</li>
+          </ul>
+        </li>
+        <li><strong>Phase 2: Build (June–September; $70k for compute, talent, salaries).</strong> Determine the competition structure: lock in testbed design for three-to-five challenge types (e.g. training-run attestation, training-vs-inference classification, undeclared-workload detection), specify the scoring function and adversarial budget, and send to frontier AI security researchers to review.</li>
+        <li><strong>Phase 3: Launch (October; $50k–$500k for prize, marketing, judging, review).</strong> Public Verifier Challenge launch.</li>
       </ul>
     </details>
 
