@@ -585,7 +585,7 @@
 
     <h3 id="agent">The inspector agent</h3>
 
-    <p>We use Claude Sonnet 4.6 and Opus-4.7 with <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/inspector/prompts.py">custom system and user prompts</a>, accessed through Anthropic API. The system prompt is frozen and cached for an hour, the log payload is cached for five minutes, and the agent's output is structured JSON. Each call sends the agent a captured trace and the protocol schema, and the agent emits a verdict — training or inference — together with a stated confidence and a list of cited signals. We describe the agent's actual verdicts on real data <a href="#results">further down</a>.</p>
+    <p>We use Claude Sonnet 4.6 and Opus-4.7 with <a href="https://github.com/jasonhausenloy/inspector-agents/blob/main/inspector/prompts.py">custom system and user prompts</a>, accessed through Anthropic API. The system prompt is frozen and cached for an hour, the log payload is cached for five minutes, and the agent's output is structured JSON. Each call sends the agent a captured trace and the protocol schema, and the agent emits a verdict together with a stated confidence and a list of cited signals. We describe the agent's actual verdicts on real data <a href="#results">further down</a>.</p>
 
     <h3 id="laptop">Laptop-scale testbed (Jason)</h3>
 
