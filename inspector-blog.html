@@ -488,12 +488,12 @@
       <li><a href="#overview">Our prototype</a></li>
       <li class="sub"><a href="#properties">What we wanted to verify</a></li>
       <li class="sub"><a href="#agent">The inspector agent</a></li>
-      <li class="sub"><a href="#laptop">Laptop-scale testbed</a></li>
-      <li class="sub"><a href="#h100">H100 testbed</a></li>
+      <li class="sub"><a href="#laptop">Laptop-scale testbed (Jason)</a></li>
+      <li class="sub"><a href="#h100">H100 testbed (Jasmine)</a></li>
       <li class="sub"><a href="#results">Results</a></li>
       <!-- <li class="sub"><a href="#anatomy">Anatomy of an H100 log</a></li> -->
 
-      <li><a href="#next">What's next</a></li>
+      <li><a href="#next">Our next steps</a></li>
       <li><a href="#didnt">What we didn't do</a></li>
     </ul>
   </aside>
@@ -745,11 +745,11 @@
 
     <p><strong>Building the challenge:</strong></p>
     <ul>
-      <li><span class="diff easy">[easy]</span> <strong>A list of properties we cannot yet detect.</strong> Probably more useful to the field than another property we can.</li>
+      <li><span class="diff easy">[easy]</span>&nbsp;<b>Identifying a</b><strong>&nbsp;list of compute-usage properties we cannot yet detect but want to verify.</strong>&nbsp;This has not been comprehensively done before, and would be useful both as a theoretical contribution and a guiding lode for verifier implementation progress.</li>
       <li><span class="diff easy">[easy]</span> <strong>A Fermi estimate</strong> of the hardware requirements to scale this approach to a production-scale datacenter.</li>
-      <li><span class="diff medium">[medium]</span> <strong>A first-pass adversary model</strong> — what an adversary actually does at scale. The cheap version: a single-prompt Claude red-teamer. The expensive version: a real engineering team running real evasions.</li>
+      <li><span class="diff medium">[medium]</span> <strong>A stronger adversary model</strong>&nbsp;<b>(red team). </b>We'd like to develop stronger models for what real attempted evasions in compute-usage logs would look like from adversaries.</li>
       <li><span class="diff medium">[medium]</span> <strong>Challenge prompts, leaderboard, evaluation harness</strong> — the mechanical surface that turns "an idea for a competition" into "a competition you can actually enter."</li>
-      <li><span class="diff hard">[hard]</span> <strong>An adversarial case the agent fails.</strong> We have fifteen patch-driven near-misses in the red-team loop; we do not yet have a clean failure mode that holds across protocol patches. Finding one is the test of the framework.<span class="marginal"><span class="label">Note</span>Standard log-based intrusion-detection evasion taxonomy applies: padding, substitution, fragmentation, encoding. The 60-round loop ported the first two.</span></li>
+      <li><span class="marginal"><span class="label">Note</span>Standard log-based intrusion-detection evasion taxonomy applies: padding, substitution, fragmentation, encoding. The 60-round loop ported the first two.</span></li>
     </ul>
 
     <p><strong>Protocols:</strong></p>
@@ -765,7 +765,7 @@
       <li><strong>Multi-node fabric.</strong> Single-host on the laptop, two hosts on the testbed. Real frontier training is hundreds of nodes with distinct topology. The hard part of verification is the fabric, not the chip.<span class="marginal"><span class="label">Note</span>Cross-node verification needs per-rank NCCL + per-link bandwidth. NVLink is intra-node only; the inter-node fabric (InfiniBand, RoCE) is the harder verification target.</span></li>
       <li><strong>DCGM counters that need privileged access.</strong> We ran on RunPod community pods, which don't grant the privileged container (or <code>CAP_SYS_ADMIN</code>) that DCGM needs to read NVLink TX/RX, TENSOR_ACTIVE, and DRAM_ACTIVE. Those three counters carry signals — gradient-sync bandwidth, mixed-precision usage, memory throughput — that several of the harder verification properties depend on. We worked around the gap and noted it in the dataset card, but the H100 results above use only counters readable from an unprivileged container.</li>
       <li><strong>Hardware attestation.</strong> Nothing the prover writes into the log is cryptographically tied to the silicon that produced it. Without TEEs (Trusted Execution Environments — chips that can sign attestations of what they ran) or signed hardware attestations, a sufficiently sophisticated adversary can forge any log we read.<span class="marginal"><span class="label">Note</span>TEE-signed attestations exist on Intel SGX, AMD SEV-SNP, and (since 2024) H100 Confidential Computing. None used in this prototype.</span></li>
-      <li><strong>Sovereign trust [TODO better heading?].</strong> We did initial tests using Opus-4.7 as inspector agent. However, a truly deployable inspector will need to run through an open-source narrow model that all parties can audit. We plan next to finetune our own open-weights model as automated inspector agent.</li>
+      <li><strong>Sovereign trust:</strong> We did initial tests using Opus-4.7 as inspector agent. However, a truly deployable inspector will need to run through an open-source narrow model that all parties can audit. We plan next to finetune our own open-weights model as automated inspector agent.</li>
       <li><strong>Compound attacks.</strong> Each red-team round mutates one dimension; we did not stress two attack classes at once.<span class="marginal"><span class="label">Note</span>The realistic threat model is op_type relabel + token under-reporting + fingerprint rotation simultaneously. None of the 60 red-team rounds tested combinations.</span></li>
       <li><strong>n=2 hosts on the testbed.</strong> Real cross-host variance is unknown.</li>
       <li><strong>Train-vs-inference is suspiciously easy.</strong> The five-stream H100 telemetry separates training and inference roughly trivially. The harder properties (FLOP cap, undeclared fine-tune, identity) are the test of the framework.</li>
@@ -775,14 +775,12 @@
 
     <h2 id="closing">Where this goes</h2>
 
-    <p>We opened this post with three challenges: DARPA's Grand Challenge, in 2004, broke self-driving out of academic stasis and onto the streets of San Francisco inside a decade. ImageNet, in 2009, did the same for deep learning; modern AI is downstream of what AlexNet pulled off with two consumer GPUs in 2012. The Vesuvius Challenge, in 2023, recovered hundreds of scrolls that had been sealed for nineteen centuries.</p>
+    <p>AI verification has the same <em>shape</em>&nbsp;as DARPA's Grand Challenge, ImageNet, and the Vesuvius Challenge. The problem is real and the solution path is unclear, but not technically impossible. We believe that setting a public challenge will move the progress of the field materially. Simultaneously, we want to forge forward with novel research and building ourselves, through standards-setting and our automated inspection infrastructure.</p>
 
-    <p>AI verification has the same <em>shape</em>&nbsp;as these challenges --&nbsp;the problem is real and the solution path is unclear, but not impossible. We believe that setting a public challenge will move the progress of the field materially.</p>
-
-    <p>AI is the most consequential technology of our time, and we still cannot verify the most basic facts about how it's built. That gap is the binding constraint on every form of AI governance worth wanting — labs proving they're keeping their own safety commitments, state regulators enforcing whatever rules eventually land, the US and China verifying any AI deal that gets signed. None of those work without a verifier all parties can see.</p>
+    <p>AI is the most consequential technology of our time, and we still cannot verify the most basic facts about how it's built. We want to build&nbsp;<i>the</i>&nbsp;adversarially robust, privacy-preserving verifier that different parties will trust.</p><p><b>Support us.</b></p>
 
     <details class="plan">
-      <summary>Show the phased plan</summary>
+      <summary>Click here for our plan and schedule</summary>
       <ul>
         <li><strong>Phase 1, May–June (~$25k for compute, travel).</strong> Stand up a datacenter-scale MVP on a rented 8×H100 node — retrain GPT-2, capture the full multi-stream log, get the verifier reading real workloads. Begin collaborations with RAND, MIRI, DARPA, the State Department, the Frontier Model Forum, and the major cloud providers, to figure out which verification properties are actually load-bearing. Stretch goal: present the MVP at ISE 2026 in Singapore (a US–China AI governance exchange, May 17–19) and meet Chinese researchers in person.</li>
         <li><strong>Phase 2, June–September (~$70k for compute, talent).</strong> Lock the testbed for three-to-five challenge types — training-run attestation, training-vs-inference classification, undeclared-workload detection, FLOP-budget compliance, model-identity. Specify the scoring function and the adversarial budget. Send to frontier-lab security researchers to break before we publish.</li>
@@ -790,7 +788,7 @@
       </ul>
     </details>
 
-    <p>If you have compute to share, frontier security expertise to pressure-test the testbed, AI-policy contacts who'd care about this, or a thesis on which property matters most — write to us. This is the smallest version of what we're trying to build.</p>
+    <p>We are currently seeking funding, mentorship, and sponsorship from compute providers and labs.</p>
 
     <div class="resource-row">
       <a class="resource-btn" href="mailto:jasonhausenloy@gmail.com">Email Jason</a>
