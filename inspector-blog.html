@@ -714,11 +714,11 @@
 
     <p>We ran this loop for sixty rounds. Fifteen attacks succeeded, and each one was closed by a protocol patch the next round. The patch list turns out to be the more interesting artifact, since every dimension of the schema needed an explicit uniqueness or stability constraint before the agent could be relied on (truncation, model-hash drift, op-type relabelling, hash-and-config rotation, token under-reporting, cross-job fingerprint pollution), and by the end the protocol had grown from four implicit rules to nineteen.<span class="marginal"><span class="label">Patch trajectory</span><svg viewBox="0 0 240 110" width="100%" style="display:block; background:#fff; border:1px solid var(--rule); padding:6px;" font-family="ui-monospace, monospace"><line x1="32" y1="14" x2="32" y2="92" stroke="#888" stroke-width="0.4"></line><line x1="32" y1="92" x2="234" y2="92" stroke="#888" stroke-width="0.4"></line><text x="28" y="18" font-size="8" fill="#888" text-anchor="end">19</text><text x="28" y="95" font-size="8" fill="#888" text-anchor="end">4</text><text x="32" y="105" font-size="8" fill="#888">round 1</text><text x="234" y="105" font-size="8" fill="#888" text-anchor="end">60</text><polyline fill="none" stroke="var(--accent)" stroke-width="1.4" points="32,92 50,86 65,80 80,74 95,68 110,62 125,56 140,50 155,44 170,38 180,32 190,26 200,20 215,17 234,14"></polyline></svg>Rules in protocol over the 60-round red-team loop. 4 → 19.</span> The full history is at <a href="/inspector/redteam">/inspector/redteam</a>.</p>
 
-    <p>We have not yet run the inspector agent end-to-end on the H100 capture. The dataset ships with ground-truth labels — <code>workload_labels.jsonl</code> carries both the truth and the prover's claim for every phase, so any verifier can be scored against it — but actually running the agent against it is the next milestone, listed in <a href="#next">What's next</a>.</p>
+    <p>We're currently running the inspector agent end-to-end on the H100 capture and will update results soon. The dataset ships with ground-truth labels — <code>workload_labels.jsonl</code> carries both the truth and the prover's claim for every phase, and our verifier can be easily scored against it.</p>
 
     <hr>
 
-    <h2 id="next">What's next</h2>
+    <h2 id="next">Our next steps</h2>
 
     <p>Train-versus-inference and model size are the two easy properties. The next ones are harder, and the ones any real verification regime will actually need.<span class="marginal"><span class="label">Properties × signals</span><span class="mini"><span class="hd">property</span><span class="hd">load-bearing signal</span><span>FLOP cap</span><span>power × time vs Kaplan floor</span><span>model size</span><span>tensor-core util, mem footprint</span><span>undeclared finetune</span><span>NCCL bursts during "inference"</span><span>served identity</span><span>weight-checkpoint hash at load</span></span>What we'd want each verifier to read off first.</span></p>
 
@@ -729,21 +729,34 @@
       <li><span class="diff easy">[easy]</span> <strong>Is the served model the declared model.</strong> Inference-side identity. Easier than training-side because you can fingerprint the weights at load time.</li>
     </ul>
 
-    <p>Other things on the list, roughly ordered by what we'd reach for first:</p>
+    <p>Other things on the list, grouped by area:</p>
 
+    <p><strong>Improving the verifier:</strong></p>
     <ul>
       <li><span class="diff easy">[easy]</span> <strong>A Claude-written stripped-down verifier</strong> — the simplest possible program that does this reliably, assuming faithful logs. Useful as a baseline; useful as documentation.</li>
       <li><span class="diff hard">[hard]</span> <strong>A mechanistic write-up</strong> of which signals the agent is actually using to make its determination, head-by-head. Right now we know the cited signals; we do not have a reliable map from signal to weight.</li>
-      <li><span class="diff hard">[hard]</span> <strong>An adversarial case the agent fails.</strong> We have fifteen patch-driven near-misses in the red-team loop; we do not yet have a clean failure mode that holds across protocol patches. Finding one is the test of the framework.<span class="marginal"><span class="label">Note</span>Standard log-based intrusion-detection evasion taxonomy applies: padding, substitution, fragmentation, encoding. The 60-round loop ported the first two.</span></li>
-      <li><span class="diff easy">[easy]</span> <strong>A list of properties we cannot yet detect.</strong> Probably more useful to the field than another property we can.</li>
-      <li><span class="diff medium">[medium]</span> <strong>Implementation on real production-shaped traces</strong> — we already have adapters for the Alibaba clusterdata v2023 trace and the BLOOM-176B chronicles. A clean published baseline would be the next step.</li>
-      <li><span class="diff medium">[medium]</span> <strong>A first-pass adversary model</strong> — what an adversary actually does at scale. The cheap version: a single-prompt Claude red-teamer. The expensive version: a real engineering team running real evasions.</li>
       <li><span class="diff hard">[hard]</span> <strong>Realistic-subset verifier.</strong> Running on only the realistic subset of logs an inspector would see — input/output to the rack, with proprietary internal telemetry redacted. This is the version that matters for actual deployment, and the version we have not yet built.</li>
       <li><span class="diff research">[research]</span> <strong>An open-source verifier model</strong> fine-tuned on the corpus and published on Hugging Face. Right now the verifier is a Sonnet wrapper. A self-contained 7B-class model would be the version a sovereign auditor could deploy on-prem.</li>
-      <li><span class="diff medium">[medium]</span> <strong>Full multi-node implementation with privileged GPU access.</strong> We are currently bottlenecked on access to privileged GPUs, not on the engineering itself. The capture pipeline already runs on two hosts, and scaling to eight or more nodes is mostly a configuration step. What we cannot do today is read the DCGM counters that community-tier pods will not expose — NVLink TX/RX, tensor-core activity, and DRAM activity — and several of the harder verification properties (FLOP-budget compliance via integrated power × FLOPs/W, gradient-sync verification, mixed-precision attestation) depend on those counters being readable. Candidate paths: RunPod Secure Cloud, Lambda, Crusoe, an on-prem cluster, or a sponsored slice of a frontier provider's hardware.<span class="marginal"><span class="label">Note</span>AWS does not expose DCGM. GCP partially does. RunPod Secure Cloud, Lambda, and Crusoe grant privileged container access on request; community-tier RunPod, which we used, does not. Verification testbeds need raw-access providers.</span></li>
-      <li><span class="diff research">[research]</span> <strong>A first-cut networking protocol</strong> for between-chip communication that an inspector could reasonably observe without reading inside any one chip.</li>
-      <li><span class="diff easy">[easy]</span> <strong>A Fermi estimate</strong> of the hardware requirements to scale this approach to a production-scale datacenter — an honest TCO for the inspector itself.</li>
+    </ul>
+
+    <p><strong>Improving the data:</strong></p>
+    <ul>
+      <li><span class="diff medium">[medium]</span> <strong>Implementation on real production-shaped traces</strong> — we already have adapters for the Alibaba clusterdata v2023 trace and the BLOOM-176B chronicles. A clean published baseline would be the next step.</li>
+      <li><span class="diff medium">[medium]</span> <strong>Full multi-node implementation with privileged GPU access.</strong>&nbsp;We are currently bottlenecked on <i>funding for compute</i> and <i>access to privileged GPUs</i>. On the latter: cloud GPU providers (e.g. RunPod's community GPUs) do not expose DCGM counters, including NVLink TX/RX, tensor-core activity, and DRAM activity. Several of the harder verification properties (FLOP-budget compliance via integrated power × FLOPs/W, gradient-sync verification, mixed-precision attestation) depend on these counters being readable. We will look into requesting RunPod Secure Cloud, Lambda, Crusoe, an on-prem cluster, or a sponsored slice of a frontier provider's hardware.<span class="marginal"><span class="label">Note</span>AWS does not expose DCGM. GCP partially does. RunPod Secure Cloud, Lambda, and Crusoe grant privileged container access on request; community-tier RunPod, which we used, does not. Verification testbeds need raw-access providers.</span></li>
+    </ul>
+
+    <p><strong>Building the challenge:</strong></p>
+    <ul>
+      <li><span class="diff easy">[easy]</span> <strong>A list of properties we cannot yet detect.</strong> Probably more useful to the field than another property we can.</li>
+      <li><span class="diff easy">[easy]</span> <strong>A Fermi estimate</strong> of the hardware requirements to scale this approach to a production-scale datacenter.</li>
+      <li><span class="diff medium">[medium]</span> <strong>A first-pass adversary model</strong> — what an adversary actually does at scale. The cheap version: a single-prompt Claude red-teamer. The expensive version: a real engineering team running real evasions.</li>
       <li><span class="diff medium">[medium]</span> <strong>Challenge prompts, leaderboard, evaluation harness</strong> — the mechanical surface that turns "an idea for a competition" into "a competition you can actually enter."</li>
+      <li><span class="diff hard">[hard]</span> <strong>An adversarial case the agent fails.</strong> We have fifteen patch-driven near-misses in the red-team loop; we do not yet have a clean failure mode that holds across protocol patches. Finding one is the test of the framework.<span class="marginal"><span class="label">Note</span>Standard log-based intrusion-detection evasion taxonomy applies: padding, substitution, fragmentation, encoding. The 60-round loop ported the first two.</span></li>
+    </ul>
+
+    <p><strong>Protocols:</strong></p>
+    <ul>
+      <li><span class="diff research">[research]</span> <strong>A first-cut networking protocol</strong> for between-chip communication that an inspector could reasonably observe without reading inside any one chip.</li>
     </ul>
 
     <hr>
