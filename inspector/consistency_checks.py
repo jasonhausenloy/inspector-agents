@@ -42,7 +42,7 @@ def _canonical(record: dict) -> str:
 # --- Implicit checks (always run) -----------------------------------------
 
 def check_hash_chain(records: list[dict]) -> list[Violation]:
-    """Paper §3.1: logs must be tamper-evident via cryptographic commitments."""
+    """Logs must be tamper-evident via cryptographic commitments."""
     viols: list[Violation] = []
     prev_hash = "0" * 64
     for r in records:

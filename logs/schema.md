@@ -2,7 +2,7 @@
 
 One JSONL record = one chip × one time window (default: 60 s).
 
-Per the Inspector Agents paper (§3.1): each record has **Content** (what the chip did) and **Context** (what upstream caused it).
+Each record has **Content** (what the chip did) and **Context** (what upstream caused it).
 
 ## Record fields
 
@@ -40,7 +40,7 @@ Per the Inspector Agents paper (§3.1): each record has **Content** (what the ch
 
 ## Invariants the Verifier can check locally (no LLM needed)
 
-1. **Hash chain**: `prev_record_hash` matches SHA-256(prev record's canonical JSON). Tamper-evident per paper §3.1.
+1. **Hash chain**: `prev_record_hash` matches SHA-256(prev record's canonical JSON). Tamper-evident.
 2. **Timestamp monotonicity**: `window_start` ≥ previous record's `window_end` for the same `chip_id`.
 3. **FLOP accounting**: `flops ≤ chip_peak_flops × window_seconds` — no chip can exceed its published peak.
 4. **Batch/token consistency**: `tokens_processed ≈ batch_size × sequence_length × steps_in_window` within 5% slack.

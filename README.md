@@ -5,7 +5,7 @@ A working prototype of automated AI compute verification, built in two halves:
 - **Laptop scale.** A 3.2M-parameter GPT trained end-to-end on Apple Silicon (MPS), with every training step logged in a structured schema. A scaffolded Claude agent reads the logs and emits a verdict — training vs inference, FLOP-budget compliance — with a stated confidence and cited signals.
 - **Multi-host scale.** A pair of H100 SXM nodes on RunPod running an 8-phase schedule of honest workloads (pretraining, fine-tuning, inference, idle) and adversarial ones (training declared as inference, the larger model claimed as the smaller one, fine-tuning claimed as fresh pretraining). Six telemetry streams per phase: `nvsmi`, DCGM, NCCL logs, `/proc/net/dev`, checkpoints, provenance. Ground-truth labels released alongside the prover's claimed labels. **Public dataset:** [`jasminexli/verifier-challenge-traces`](https://huggingface.co/datasets/jasminexli/verifier-challenge-traces) on Hugging Face, CC-BY-4.0.
 
-Both halves are the smallest working version of the **Verifier Challenge** — an open competition we (Jason Hausenloy + Jasmine Li) are proposing: build the best system for inferring what's running inside a datacenter from its logs. The framing is the [Air-Gapped Monitoring Facility](https://en.wikipedia.org/wiki/Air_gap_(networking)) from *Inspector Agents: Privacy Preserving Monitoring for Compliance with AI Agreements* — an AI inspector reads computation logs, checks them against a public commitment, and emits a single bit: **compliant** or **violation**.
+Both halves are the smallest working version of the **Verifier Challenge** — an open competition we (Jason Hausenloy + Jasmine Li) are proposing: build the best system for inferring what's running inside a datacenter from its logs. The framing is an [Air-Gapped Monitoring Facility](https://en.wikipedia.org/wiki/Air_gap_(networking)) — an AI inspector reads computation logs, checks them against a public commitment, and emits a single bit: **compliant** or **violation**.
 
 > The bit is the only thing that leaves the AMF. The rationale, flagged records, and confidence are kept inside for adjudication.
 
@@ -95,7 +95,7 @@ Frontier training logs (GPT-4-scale) **do not exist publicly**. The closest is B
 
 The verification gap for international AI agreements — written about for years, never implemented. Like some problems before it (self-driving, image recognition, reading sealed Herculaneum scrolls), AI verification is orphaned: too applied for academia, too unprofitable for VCs, too technical for most philanthropy. We're proposing the **Verifier Challenge** — an open competition for the best system for telling, just from a datacenter's logs, what AI is being trained inside. This repo is the smallest working version we could build ourselves before opening the doors.
 
-Companion whitepaper: [jason.ml/inspector/paper](https://jason.ml/inspector/paper). Live walkthrough: [jason.ml/inspector](https://jason.ml/inspector). Adversarial loop: [jason.ml/inspector/redteam](https://jason.ml/inspector/redteam).
+Live write-up: [jason.ml/inspector](https://jason.ml/inspector).
 
 ## License
 

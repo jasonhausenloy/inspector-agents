@@ -55,7 +55,7 @@ def run_demo(backend_name: str, only: str | None, scenario_name: str):
     backend = pick_backend(backend_name)
     commitment = load_commitment("commitments/examples/no_frontier_training.yml")
 
-    console.rule("[bold]Inspector Agent — Tabletop Demo")
+    console.rule("[bold]Inspector Agent — Demo")
     console.print(Panel(
         f"[bold]Commitment:[/] {commitment['title']}\n"
         f"[bold]Scenario:[/]   {scenario_name} (clean baseline)\n"

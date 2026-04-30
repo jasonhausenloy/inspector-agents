@@ -22,7 +22,7 @@ One-time sidecar (`real_laptop_training.system_fingerprint.json`):
 ## What a frontier (e.g. GPT-5-scale) training trace would also have
 
 ### Per chip per step (we don't capture)
-- **DCGM telemetry**: SM_ACTIVE, PIPE_TENSOR_ACTIVE (the tensor-core busy fraction — Acme paper §4 shows this is the closest signal to "what fraction of theoretical FLOPs were actually achieved"), MEM_COPY_UTIL, FB_USED/FREE
+- **DCGM telemetry**: SM_ACTIVE, PIPE_TENSOR_ACTIVE (the tensor-core busy fraction — closest signal to "what fraction of theoretical FLOPs were actually achieved"), MEM_COPY_UTIL, FB_USED/FREE
 - **Per-GPU power draw** (W) — from nvidia-smi or DCGM
 - **Per-GPU thermal headroom** (°C)
 - **NVLink / NVSwitch link utilization** — for tensor-parallel partners

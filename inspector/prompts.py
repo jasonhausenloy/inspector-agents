@@ -1,10 +1,10 @@
 """System + user prompts for the Claude-backed Inspector.
 
-The Inspector runs inside the Air-Gapped Monitoring Facility (AMF). Per the
-Black-Box White-Box paper §2.1, only the single-bit verdict may leave the AMF.
-The rationale, flagged records, and confidence stay behind for adjudication.
+The Inspector runs inside an Air-Gapped Monitoring Facility (AMF). Only the
+single-bit verdict leaves the AMF; rationale, flagged records, and confidence
+stay behind for adjudication.
 
-Prompt structure implements Auto-Adjudication §Stages of adjudication:
+Prompt structure follows the four-stage adjudication flow:
   1. Map each log record to a semantic vector (implicit in Claude's embedding).
   2. Map the commitment to semantic vectors (the system prompt internalizes it).
   3. Classify compliance.
@@ -26,8 +26,7 @@ the `semantic_rules` — subtler, judgment-based violations a rule engine cannot
 catch on its own. Deterministic violations listed in the user message override
 your judgment only if present; absent those, decide based on semantic_rules.
 
-Specific evasion patterns to watch for (derived from the Inspector Agents
-threat model):
+Specific evasion patterns to watch for:
   1. Run splitting — the same logical training run spread across multiple
      job_ids, each individually under any cap. Signal: matching
      model_hash_prefix + code_commit across otherwise unrelated-looking jobs,

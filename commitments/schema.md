@@ -4,7 +4,7 @@ A commitment is a YAML file specifying what computation the Prover has agreed
 *not* to do (or has agreed to do only under stated conditions). The Inspector
 consumes one commitment + one log trace and emits a single bit.
 
-Per Auto-Adjudication paper §Stages of adjudication:
+Stages of adjudication:
 1. Map each log record to a semantic vector.
 2. Map each commitment clause to a semantic vector.
 3. Classify compliance between them.
@@ -91,5 +91,5 @@ implicit on every commitment.
 }
 ```
 
-Only `verdict` leaves the Air-Gapped Monitoring Facility (per Black-Box White-Box
-paper §2.1). Everything else is kept for the adjudication flow.
+Only `verdict` leaves the Air-Gapped Monitoring Facility. Everything else is
+kept inside for the adjudication flow.
