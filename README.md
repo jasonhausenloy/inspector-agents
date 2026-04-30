@@ -34,10 +34,9 @@ inspector-agents/
 │   ├── scripts/                 # Push to HF, smoke tests, dataset packaging
 │   └── output/runs/             # Per-host capture artifacts (gitignored)
 ├── demo.py                      # End-to-end pass/fail matrix (laptop)
-├── server.py                    # Live HTTP server for the walkthrough
-├── walkthrough.html             # Single-file interactive demo
-├── walkthrough_redteam.html     # Adversarial-loop tournament viewer
-└── inspector-blog.html          # Long-form post — source for jason.ml/inspector
+├── inspector-blog.html          # Long-form post — source for jason.ml/inspector
+├── edit_server.py               # In-place editor for the blog (visit ?edit=1)
+└── archive/                     # Old walkthrough drafts + cached demo outputs
 ```
 
 ## Run the laptop demo
@@ -46,7 +45,6 @@ inspector-agents/
 uv sync
 uv run python demo.py                   # full 6-case matrix, ~$0.29, ~75s
 uv run python demo.py --backend mock    # offline, deterministic, instant
-uv run python server.py                 # live walkthrough at http://localhost:8765
 ```
 
 The Claude backend uses `claude -p` (Claude Code CLI) — no `ANTHROPIC_API_KEY` needed if you have Claude Code installed.
