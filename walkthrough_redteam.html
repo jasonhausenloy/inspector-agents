@@ -14,8 +14,15 @@
     --serif: "Iowan Old Style", "Source Serif 4", Georgia, serif;
   }
   *,*::before,*::after{box-sizing:border-box}html,body{margin:0}
-  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   main{max-width:880px;margin:0 auto;padding:48px 24px 80px}
+  img,svg{max-width:100%;height:auto}
+  table{max-width:100%}
+  .table-scroll{display:block;overflow-x:auto}
+  @media(max-width:640px){
+    main{padding:32px 16px 64px}
+    .round-head{grid-template-columns:1fr}
+  }
   .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:14px}
   h1{font-family:var(--serif);font-weight:500;font-size:clamp(30px,4vw,46px);line-height:1.05;letter-spacing:-.01em;margin:0 0 16px}
   .lede{font-size:18px;line-height:1.45;margin:0 0 8px}
@@ -77,6 +84,7 @@
   The loop ran 53 rounds across ~12 hours. Every missed attack produced a deployed protocol patch within minutes. The protocol grew from <strong>5 deterministic rules to 15</strong> and converged on a stable state where the red-team consistently fails.
 </p>
 
+<div class="table-scroll">
 <table style="width:100%;border-collapse:collapse;font-size:14px;margin:18px 0;background:var(--bg-card);border:1px solid var(--rule);border-radius:12px;overflow:hidden;">
 <thead><tr style="border-bottom:2px solid var(--rule);text-align:left;background:#fbf8f0;"><th style="padding:12px 14px;">Outcome</th><th style="text-align:right;padding:12px 14px;">Count</th><th style="text-align:right;padding:12px 14px;">% of total</th></tr></thead>
 <tbody>
@@ -86,6 +94,7 @@
 <tr><td style="padding:10px 14px;color:var(--ink-soft);">Other / unparseable</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">3</td><td style="text-align:right;padding:10px 14px;font-family:var(--mono);">6%</td></tr>
 </tbody>
 </table>
+</div>
 
 <div class="stats" style="margin-top:8px">
   <div class="stat"><div class="num">14</div><div class="lbl">Protocol patches deployed</div></div>
@@ -102,7 +111,7 @@
   <summary style="padding:14px 18px;cursor:pointer;font-weight:600;font-size:14px;list-style:none;">
     Patch ↔ attack mapping (click to expand) <span style="float:right;color:var(--ink-soft);">▸</span>
   </summary>
-  <div style="padding:0 18px 14px;">
+  <div style="padding:0 18px 14px;" class="table-scroll">
     <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:var(--mono);">
     <thead><tr style="border-bottom:1px solid var(--rule);text-align:left;color:var(--ink-soft);"><th style="padding:8px 4px;">Patch</th><th>Round</th><th>Attack class</th><th>Rule added</th></tr></thead>
     <tbody>
