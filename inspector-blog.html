@@ -23,7 +23,9 @@
   body {
     margin: 0; background: var(--bg); color: var(--ink);
     font-family: var(--serif); font-size: 18px; line-height: 1.65;
+    overflow-x: hidden;
   }
+  img, svg { max-width: 100%; height: auto; }
 
   /* ───── Layout ───── */
   .layout {
@@ -148,16 +150,19 @@
     border: none;
     margin-bottom: 0;
   }
-  /* Hero-size marginal — bigger than the regular sidebar images */
+  /* Hero-size marginal — bigger than the regular sidebar images.
+     Only goes wide enough to overflow into the viewport's whitespace
+     when the layout is centered with room to spare (≥1464px viewport).
+     Below that, falls back to regular .marginal width so it fits col3. */
   .marginal.hero {
     width: 420px;
     margin-right: -460px;
     margin-bottom: 18px;
   }
-  @media (max-width: 1280px) {
+  @media (max-width: 1463px) {
     .marginal.hero {
-      width: 360px;
-      margin-right: -380px;
+      width: 264px;
+      margin-right: -304px;
     }
   }
   .marginal .placeholder-box {
@@ -208,7 +213,7 @@
     padding: 9px 11px;
     border-radius: 3px;
     max-height: 220px;
-    overflow-y: auto;
+    overflow: auto;
     white-space: pre;
     font-family: var(--mono);
     font-size: 10px;
