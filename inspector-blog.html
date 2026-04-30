@@ -491,10 +491,11 @@
       <li class="sub"><a href="#laptop">Laptop-scale testbed (Jason)</a></li>
       <li class="sub"><a href="#h100">H100 testbed (Jasmine)</a></li>
       <li class="sub"><a href="#results">Results</a></li>
+      <li class="sub"><a href="#didnt">Current limitations</a></li>
       <!-- <li class="sub"><a href="#anatomy">Anatomy of an H100 log</a></li> -->
 
       <li><a href="#next">Our next steps</a></li>
-      <li><a href="#didnt">What we didn't do</a></li>
+      <li><a href="#closing">Support us</a></li>
     </ul>
   </aside>
 
@@ -716,6 +717,18 @@
 
     <p>We're currently running the inspector agent end-to-end on the H100 capture and will update results soon. The dataset ships with ground-truth labels — <code>workload_labels.jsonl</code> carries both the truth and the prover's claim for every phase, and our verifier can be easily scored against it.</p>
 
+    <h3 id="didnt">Current limitations</h3>
+
+    <ul>
+      <li><strong>Multi-node fabric.</strong> Single-host on the laptop, two hosts on the testbed. Real frontier training is hundreds of nodes with distinct topology. The hard part of verification is the fabric, not the chip.<span class="marginal"><span class="label">Note</span>Cross-node verification needs per-rank NCCL + per-link bandwidth. NVLink is intra-node only; the inter-node fabric (InfiniBand, RoCE) is the harder verification target.</span></li>
+      <li><strong>DCGM counters that need privileged access.</strong> We ran on RunPod community pods, which don't grant the privileged container (or <code>CAP_SYS_ADMIN</code>) that DCGM needs to read NVLink TX/RX, TENSOR_ACTIVE, and DRAM_ACTIVE. Those three counters carry signals — gradient-sync bandwidth, mixed-precision usage, memory throughput — that several of the harder verification properties depend on. We worked around the gap and noted it in the dataset card, but the H100 results above use only counters readable from an unprivileged container.</li>
+      <li><strong>Hardware attestation.</strong> Nothing the prover writes into the log is cryptographically tied to the silicon that produced it. Without TEEs (Trusted Execution Environments — chips that can sign attestations of what they ran) or signed hardware attestations, a sufficiently sophisticated adversary can forge any log we read.<span class="marginal"><span class="label">Note</span>TEE-signed attestations exist on Intel SGX, AMD SEV-SNP, and (since 2024) H100 Confidential Computing. None used in this prototype.</span></li>
+      <li><strong>Sovereign trust:</strong> We did initial tests using Opus-4.7 as inspector agent. However, a truly deployable inspector will need to run through an open-source narrow model that all parties can audit. We plan next to finetune our own open-weights model as automated inspector agent.</li>
+      <li><strong>Compound attacks.</strong> Each red-team round mutates one dimension; we did not stress two attack classes at once.<span class="marginal"><span class="label">Note</span>The realistic threat model is op_type relabel + token under-reporting + fingerprint rotation simultaneously. None of the 60 red-team rounds tested combinations.</span></li>
+      <li><strong>n=2 hosts on the testbed.</strong> Real cross-host variance is unknown.</li>
+      <li><strong>Train-vs-inference is suspiciously easy.</strong> The five-stream H100 telemetry separates training and inference roughly trivially. The harder properties (FLOP cap, undeclared fine-tune, identity) are the test of the framework.</li>
+    </ul>
+
     <hr>
 
     <h2 id="next">Our next steps</h2>
@@ -759,28 +772,14 @@
 
     <hr>
 
-    <h2 id="didnt">What we didn't do</h2>
-
-    <ul>
-      <li><strong>Multi-node fabric.</strong> Single-host on the laptop, two hosts on the testbed. Real frontier training is hundreds of nodes with distinct topology. The hard part of verification is the fabric, not the chip.<span class="marginal"><span class="label">Note</span>Cross-node verification needs per-rank NCCL + per-link bandwidth. NVLink is intra-node only; the inter-node fabric (InfiniBand, RoCE) is the harder verification target.</span></li>
-      <li><strong>DCGM counters that need privileged access.</strong> We ran on RunPod community pods, which don't grant the privileged container (or <code>CAP_SYS_ADMIN</code>) that DCGM needs to read NVLink TX/RX, TENSOR_ACTIVE, and DRAM_ACTIVE. Those three counters carry signals — gradient-sync bandwidth, mixed-precision usage, memory throughput — that several of the harder verification properties depend on. We worked around the gap and noted it in the dataset card, but the H100 results above use only counters readable from an unprivileged container.</li>
-      <li><strong>Hardware attestation.</strong> Nothing the prover writes into the log is cryptographically tied to the silicon that produced it. Without TEEs (Trusted Execution Environments — chips that can sign attestations of what they ran) or signed hardware attestations, a sufficiently sophisticated adversary can forge any log we read.<span class="marginal"><span class="label">Note</span>TEE-signed attestations exist on Intel SGX, AMD SEV-SNP, and (since 2024) H100 Confidential Computing. None used in this prototype.</span></li>
-      <li><strong>Sovereign trust:</strong> We did initial tests using Opus-4.7 as inspector agent. However, a truly deployable inspector will need to run through an open-source narrow model that all parties can audit. We plan next to finetune our own open-weights model as automated inspector agent.</li>
-      <li><strong>Compound attacks.</strong> Each red-team round mutates one dimension; we did not stress two attack classes at once.<span class="marginal"><span class="label">Note</span>The realistic threat model is op_type relabel + token under-reporting + fingerprint rotation simultaneously. None of the 60 red-team rounds tested combinations.</span></li>
-      <li><strong>n=2 hosts on the testbed.</strong> Real cross-host variance is unknown.</li>
-      <li><strong>Train-vs-inference is suspiciously easy.</strong> The five-stream H100 telemetry separates training and inference roughly trivially. The harder properties (FLOP cap, undeclared fine-tune, identity) are the test of the framework.</li>
-    </ul>
-
-    <hr>
-
-    <h2 id="closing">Where this goes</h2>
+    <h2 id="closing">Support us</h2>
 
     <p>AI verification has the same <em>shape</em>&nbsp;as DARPA's Grand Challenge, ImageNet, and the Vesuvius Challenge. The problem is real and the solution path is unclear, but not technically impossible. We believe that setting a public challenge will move the progress of the field materially. Simultaneously, we want to forge forward with novel research and building ourselves, through standards-setting and our automated inspection infrastructure.</p>
 
     <p>AI is the most consequential technology of our time, and we still cannot verify the most basic facts about how it's built. We want to build&nbsp;<i>the</i>&nbsp;adversarially robust, privacy-preserving verifier that different parties will trust.</p><p><b>Support us.</b></p>
 
     <details class="plan">
-      <summary>Click here for our plan and schedule</summary>
+      <summary>Show our phased plan</summary>
       <ul>
         <li><strong>Phase 1, May–June (~$25k for compute, travel).</strong> Stand up a datacenter-scale MVP on a rented 8×H100 node — retrain GPT-2, capture the full multi-stream log, get the verifier reading real workloads. Begin collaborations with RAND, MIRI, DARPA, the State Department, the Frontier Model Forum, and the major cloud providers, to figure out which verification properties are actually load-bearing. Stretch goal: present the MVP at ISE 2026 in Singapore (a US–China AI governance exchange, May 17–19) and meet Chinese researchers in person.</li>
         <li><strong>Phase 2, June–September (~$70k for compute, talent).</strong> Lock the testbed for three-to-five challenge types — training-run attestation, training-vs-inference classification, undeclared-workload detection, FLOP-budget compliance, model-identity. Specify the scoring function and the adversarial budget. Send to frontier-lab security researchers to break before we publish.</li>
