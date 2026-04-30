@@ -1,10 +1,15 @@
 # Inspector Agents
 
-A working tabletop implementation of the [Air-Gapped Monitoring Facility](https://en.wikipedia.org/wiki/Air_gap_(networking)) described in *Inspector Agents: Privacy Preserving Monitoring for Compliance with AI Agreements*. An AI inspector reads computation logs, checks them against a public commitment, and emits a single bit: **compliant** or **violation**.
+A working prototype of automated AI compute verification, built in two halves:
+
+- **Laptop scale.** A 3.2M-parameter GPT trained end-to-end on Apple Silicon (MPS), with every training step logged in a structured schema. A scaffolded Claude agent reads the logs and emits a verdict — training vs inference, FLOP-budget compliance — with a stated confidence and cited signals.
+- **Multi-host scale.** A pair of H100 SXM nodes on RunPod running an 8-phase schedule of honest workloads (pretraining, fine-tuning, inference, idle) and adversarial ones (training declared as inference, the larger model claimed as the smaller one, fine-tuning claimed as fresh pretraining). Six telemetry streams per phase: `nvsmi`, DCGM, NCCL logs, `/proc/net/dev`, checkpoints, provenance. Ground-truth labels released alongside the prover's claimed labels. **Public dataset:** [`jasminexli/verifier-challenge-traces`](https://huggingface.co/datasets/jasminexli/verifier-challenge-traces) on Hugging Face, CC-BY-4.0.
+
+Both halves are the smallest working version of the **Verifier Challenge** — an open competition we (Jason Hausenloy + Jasmine Li) are proposing: build the best system for inferring what's running inside a datacenter from its logs. The framing is the [Air-Gapped Monitoring Facility](https://en.wikipedia.org/wiki/Air_gap_(networking)) from *Inspector Agents: Privacy Preserving Monitoring for Compliance with AI Agreements* — an AI inspector reads computation logs, checks them against a public commitment, and emits a single bit: **compliant** or **violation**.
 
 > The bit is the only thing that leaves the AMF. The rationale, flagged records, and confidence are kept inside for adjudication.
 
-**Live interactive demo:** https://jason.ml/inspector
+**Live demo / write-up:** https://jason.ml/inspector
 
 ## What's in here
 
@@ -12,7 +17,7 @@ A working tabletop implementation of the [Air-Gapped Monitoring Facility](https:
 inspector-agents/
 ├── commitments/                 # YAML treaty specs (what's allowed)
 │   └── examples/no_frontier_training.yml
-├── logs/
+├── logs/                        # Laptop schema + adapters
 │   ├── schema.md                # Computation log record format
 │   ├── generator.py             # Synthetic scenarios
 │   ├── alibaba_adapter.py       # Real Alibaba clusterdata v2023 → our schema
@@ -22,13 +27,20 @@ inspector-agents/
 │   ├── agent.py                 # inspect(commitment, logs) -> Verdict
 │   ├── consistency_checks.py    # Deterministic pre-pass
 │   └── prompts.py               # Claude system prompt + user-message builder
-├── redteam/                     # Five evasion strategies the inspector must catch
-├── demo.py                      # End-to-end pass/fail matrix
+├── redteam/                     # Evasion strategies the inspector must catch
+├── gpu-runs/                    # 2×H100 SXM testbed
+│   ├── README.md                # Run plan, schedule, telemetry channels
+│   ├── workload/                # Orchestrator + per-phase entrypoints
+│   ├── scripts/                 # Push to HF, smoke tests, dataset packaging
+│   └── output/runs/             # Per-host capture artifacts (gitignored)
+├── demo.py                      # End-to-end pass/fail matrix (laptop)
 ├── server.py                    # Live HTTP server for the walkthrough
-└── walkthrough.html             # Single-file interactive demo
+├── walkthrough.html             # Single-file interactive demo
+├── walkthrough_redteam.html     # Adversarial-loop tournament viewer
+└── inspector-blog.html          # Long-form post — source for jason.ml/inspector
 ```
 
-## Run the demo
+## Run the laptop demo
 
 ```bash
 uv sync
@@ -52,20 +64,41 @@ The Claude backend uses `claude -p` (Claude Code CLI) — no `ANTHROPIC_API_KEY`
 
 **6/6 correct. $0.29 total LLM spend. 75s wall time.**
 
-## Real data
+## H100 testbed (`gpu-runs/`)
 
-Tested against:
-- **Alibaba clusterdata v2023** (`logs/alibaba/`) — real production GPU cluster trace, 8,152 pods. Adapter at `logs/alibaba_adapter.py`. Verdict: COMPLIANT, $0.10.
-- **Self-trained tiny GPT** (`logs/real_training.py`) — trains a 3.2M-param model on Tiny Shakespeare on Apple Silicon MPS, logs every step in our schema with full telemetry (forward/backward/optimizer time, per-group grad norms, RSS/CPU/MPS memory, weight norms every 50 steps, top-5 param stats).
+Real datacenter hardware: 2× H100 80GB SXM, run on RunPod. Each host runs the same 8-phase schedule (5 honest + 1 idle + 3 adversarial) independently, so the dataset has a cross-host generalization axis (different driver patches, NCCL builds, thermal envelopes, neighbor-tenant interference).
 
-Frontier training logs (GPT-4-scale) **do not exist publicly**. The closest is BLOOM tr11-176B at huggingface.co/bigscience/tr11-176B-logs. See `logs/scenarios/real_laptop_training.frontier_gap.md` for what's missing vs a frontier trace.
+| # | Phase | Duration | Op (logged) | Op (true) | Tests |
+|---|-------|----------|-------------|-----------|-------|
+| 1 | `honest_pretrain_tiny` | 30 min | training | training | P1·P2·P3 baseline |
+| 2 | `honest_pretrain_small` | 30 min | training | training | P1·P2 baseline |
+| 3 | `honest_inference_small` | 15 min | inference | inference | P1 baseline |
+| 4 | `honest_finetune_tiny` | 20 min | training | training | P3 baseline |
+| 5 | `idle` | 5 min | idle | idle | confound check |
+| 6 | `adv_train_as_infer` | 15 min | **inference** | training | **P1 attack** |
+| 7 | `adv_big_as_small` | 15 min | training | training | **P2 attack** (gpt-small logged as gpt-tiny) |
+| 8 | `adv_finetune_as_pretrain` | 15 min | training | training | **P3 attack** |
+
+P1 = training vs inference. P2 = model size ≤ N parameters. P3 = pretrain vs fine-tune. Each property exercises a different telemetry channel, so a single-signal verifier can't catch all three at once.
+
+Per phase, six telemetry streams: `nvsmi.csv` (1 Hz), `dcgm.csv` (10 Hz, where unprivileged containers allow), `nccl_<host>_<pid>.log.gz` (per-rank), `netdev.log.gz`, checkpoints, `provenance.json`. Full design and run notes in [`gpu-runs/README.md`](gpu-runs/README.md); operational notes in [`gpu-runs/CLAUDE.md`](gpu-runs/CLAUDE.md).
+
+Public dataset: [`jasminexli/verifier-challenge-traces`](https://huggingface.co/datasets/jasminexli/verifier-challenge-traces) (CC-BY-4.0). Ground-truth labels in `workload_labels.jsonl` alongside the prover's claimed labels — the whole capture is a label-flip benchmark scoreable by any verifier.
+
+## Real data adapters
+
+- **Alibaba clusterdata v2023** (`logs/alibaba/`) — real production GPU cluster trace, 8,152 pods. Adapter at `logs/alibaba_adapter.py`. Verdict on the laptop verifier: COMPLIANT, $0.10.
+- **Self-trained tiny GPT** (`logs/real_training.py`) — 3.2M-param model on Tiny Shakespeare (MPS), every step in schema with full telemetry (forward/backward/optimizer time, per-group grad norms, RSS/CPU/MPS memory, weight norms every 50 steps, top-5 param stats).
+- **2×H100 capture** — see above.
+
+Frontier training logs (GPT-4-scale) **do not exist publicly**. The closest is BLOOM tr11-176B at `huggingface.co/bigscience/tr11-176B-logs`. See `logs/scenarios/real_laptop_training.frontier_gap.md` for what's missing vs a frontier trace.
 
 ## Why this exists
 
-The verification gap for international AI treaties — written about for years, never implemented. The hard part wasn't ever the technology; it was nobody building it. This is the working prototype.
+The verification gap for international AI agreements — written about for years, never implemented. Like some problems before it (self-driving, image recognition, reading sealed Herculaneum scrolls), AI verification is orphaned: too applied for academia, too unprofitable for VCs, too technical for most philanthropy. We're proposing the **Verifier Challenge** — an open competition for the best system for telling, just from a datacenter's logs, what AI is being trained inside. This repo is the smallest working version we could build ourselves before opening the doors.
 
-Built in a day from the *Inspector Agents* and *Auto-Adjudication* drafts (internal). Companion whitepaper: [jason.ml/inspector/paper](https://jason.ml/inspector/paper). Live demo: [jason.ml/inspector](https://jason.ml/inspector). Live adversarial loop: [jason.ml/inspector/redteam](https://jason.ml/inspector/redteam).
+Companion whitepaper: [jason.ml/inspector/paper](https://jason.ml/inspector/paper). Live walkthrough: [jason.ml/inspector](https://jason.ml/inspector). Adversarial loop: [jason.ml/inspector/redteam](https://jason.ml/inspector/redteam).
 
 ## License
 
-MIT.
+MIT (code) · CC-BY-4.0 (`verifier-challenge-traces` dataset).
